@@ -2,6 +2,7 @@
   "name": "krakenpc-store",
   "version": "1.0.0",
   "private": true,
+  "type": "commonjs",
   "description": "Server-rendered, multilingual PC hardware store for KrakenPC",
   "scripts": {
     "start": "node server.js",

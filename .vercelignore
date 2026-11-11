@@ -1,0 +1,7 @@
+.env
+.env.*
+.data/
+tests/
+*.log
+.DS_Store
+

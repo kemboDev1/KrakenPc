@@ -4,25 +4,26 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
-  ROOT, PORT, HOST, PUBLIC_ORIGIN, PROD,
+  ROOT, ON_VERCEL, PORT, HOST, PUBLIC_ORIGIN, PROD,
   SESSION_KEY, STATUSES, BUILD_FIELDS,
   esc, localized, formatPrice, localizedRoute, localPath
-} = require('./src/config');
-const { tr } = require('./src/i18n');
+} = u(require('./src/config'));
+const { tr } = u(require('./src/i18n'));
 const {
   initStore, saveStore, getStore, productById, productBySlug,
   getSession, rotateSession, validCsrf
-} = require('./src/storage');
-const { productArtworkSvg } = require('./src/artwork');
-const { sendOrderReport, sendStatusReport, startBotPolling, stopBotPolling } = require('./src/telegram');
-const { evaluateBuild } = require('./src/builder');
-const { cartTotals } = require('./src/views/layout');
+} = u(require('./src/storage'));
+const { productArtworkSvg, faviconPngBuffer, faviconIcoBuffer } = u(require('./src/artwork'));
+const { sendOrderReport, sendStatusReport, startBotPolling, stopBotPolling } = u(require('./src/telegram'));
+const { evaluateBuild } = u(require('./src/builder'));
+const { cartTotals } = u(require('./src/views/layout'));
 const {
   homePage, catalogPage, productPage, simpleListPage,
   cartPage, checkoutPage, renderBuilder, successPage, pageNotFound, forbiddenPage
-} = require('./src/views/storePages');
-const { adminLoginPage, adminPage } = require('./src/views/adminPages');
+} = u(require('./src/views/storePages'));
+const { adminLoginPage, adminPage } = u(require('./src/views/adminPages'));
 
 const MAX_CART_LINES = 24;
 const limiters = new Map();
@@ -30,7 +31,7 @@ const limiters = new Map();
 function rateAllowed(req, key, maximum, windowMs, scope = '') {
   const now = Date.now();
   let ip = req.socket.remoteAddress || 'unknown';
-  if (process.env.TRUST_PROXY === '1') {
+  if (ON_VERCEL || process.env.TRUST_PROXY === '1') {
     const forwarded = String(req.headers['x-forwarded-for'] || '')
       .split(',')
       .map(item => item.trim())
@@ -97,7 +98,7 @@ function commonHeaders(req, res) {
   if (req.method === 'POST' && req.headers.origin) {
     try {
       const origin = new URL(req.headers.origin);
-      const expectedHost = process.env.TRUST_PROXY === '1'
+      const expectedHost = (ON_VERCEL || process.env.TRUST_PROXY === '1')
         ? String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim()
         : String(req.headers.host || '');
       if (!expectedHost || origin.host !== expectedHost || !['http:', 'https:'].includes(origin.protocol)) {
@@ -252,6 +253,16 @@ function handleStaticGet(req, res, pathname, url) {
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=604800');
     return outputBody(res, Buffer.from(svg));
+  }
+  if (pathname === '/favicon.png') {
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    return outputBody(res, faviconPngBuffer());
+  }
+  if (pathname === '/favicon.ico') {
+    res.setHeader('Content-Type', 'image/x-icon');
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    return outputBody(res, faviconIcoBuffer());
   }
 
   const artMatch = pathname.match(/^\/art\/([a-z0-9-]+)\.svg$/);
@@ -640,7 +651,8 @@ async function handlePost(req, res, session, pathname) {
     await saveStore();
 
     if (order.telegramStatus === 'queued') {
-      void sendOrderReport(order);
+      if (ON_VERCEL) await sendOrderReport(order);
+      else void sendOrderReport(order);
     }
     return redirect(res, `/success?id=${encodeURIComponent(order.id)}`);
   }
@@ -694,7 +706,10 @@ async function handlePost(req, res, session, pathname) {
 
     order.status = status;
     await saveStore();
-    if (old !== status) void sendStatusReport(order);
+    if (old !== status) {
+      if (ON_VERCEL) await sendStatusReport(order);
+      else void sendStatusReport(order);
+    }
     return redirect(res, '/admin');
   }
 
@@ -704,7 +719,8 @@ async function handlePost(req, res, session, pathname) {
     if (order) {
       order.telegramStatus = 'queued';
       await saveStore();
-      void sendOrderReport(order);
+      if (ON_VERCEL) await sendOrderReport(order);
+      else void sendOrderReport(order);
     }
     return redirect(res, '/admin');
   }
@@ -725,6 +741,17 @@ async function handlePost(req, res, session, pathname) {
   return res.end('<!doctype html><title>Not found</title><h1>Not found</h1>');
 }
 
+let initPromise = null;
+function ensureStoreReady() {
+  if (!initPromise) {
+    initPromise = initStore().catch(error => {
+      initPromise = null;
+      throw error;
+    });
+  }
+  return initPromise;
+}
+
 async function handleRequest(req, res) {
   res.req = req;
   res.outputBody = bytes => outputBody(res, bytes);
@@ -737,7 +764,7 @@ async function handleRequest(req, res) {
   let url;
   let pathname;
   try {
-    url = new URL(req.url, 'http://local');
+    url = new URL(req.url || '/', 'http://local');
     pathname = decodeURIComponent(url.pathname);
   } catch {
     res.statusCode = 400;
@@ -748,6 +775,14 @@ async function handleRequest(req, res) {
     res.setHeader('Allow', 'GET, HEAD, POST');
     res.statusCode = 405;
     return res.end('Method not allowed');
+  }
+
+  try {
+    await ensureStoreReady();
+  } catch {
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.end('Store could not be initialized.');
   }
 
   if (req.method !== 'POST') {
@@ -796,11 +831,13 @@ async function handleRequest(req, res) {
   }
 }
 
+const requestHandler = (req, res) => {
+  void handleRequest(req, res);
+};
+
 async function start() {
-  await initStore();
-  const server = http.createServer((req, res) => {
-    void handleRequest(req, res);
-  });
+  await ensureStoreReady();
+  const server = http.createServer(requestHandler);
   server.requestTimeout = 15000;
   server.headersTimeout = 16000;
   server.keepAliveTimeout = 5000;
@@ -824,7 +861,15 @@ async function start() {
   process.once('SIGTERM', shutdown);
 }
 
-start().catch(error => {
-  console.error(`KrakenPC could not start: ${error.message}`);
-  process.exitCode = 1;
-});
+if (ON_VERCEL) {
+  void ensureStoreReady().catch(error => {
+    console.error(`KrakenPC Vercel warmup failed: ${error.message}`);
+  });
+} else {
+  start().catch(error => {
+    console.error(`KrakenPC could not start: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = requestHandler;

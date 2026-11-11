@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
-const { esc, localized } = require('./config');
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
+const { esc, localized } = u(require('./config'));
 
 const svgCache = new Map();
 
@@ -63,14 +64,86 @@ function pngBuffer(product) {
     case 'headset': circle(322, 202, 126, [39, 53, 61], false, 22); rect(168, 175, 83, 133, shadow); outline(168, 175, 83, 133, edge, 4); rect(392, 175, 83, 133, shadow); outline(392, 175, 83, 133, edge, 4); rect(180, 191, 58, 102, glow); rect(405, 191, 58, 102, glow); line(428, 307, 390, 361, edge, 7); circle(386, 365, 7, glow); break;
     default: rect(189, 81, 246, 230, shadow); outline(189, 81, 246, 230, edge, 4); drawFan(310, 192, 70);
   }
-  const crcTable = pngBuffer.crcTable || (pngBuffer.crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; }));
-  const crc = buffer => { let c = 0xffffffff; for (const byte of buffer) c = crcTable[(c ^ byte) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
-  const chunk = (type, data) => { const typeBuffer = Buffer.from(type); const length = Buffer.alloc(4); length.writeUInt32BE(data.length); const crcBuffer = Buffer.alloc(4); crcBuffer.writeUInt32BE(crc(Buffer.concat([typeBuffer, data]))); return Buffer.concat([length, typeBuffer, data, crcBuffer]); };
-  const header = Buffer.alloc(13); header.writeUInt32BE(width, 0); header.writeUInt32BE(height, 4); header[8] = 8; header[9] = 6;
-  const raw = Buffer.alloc((width * 4 + 1) * height);
-  for (let y = 0; y < height; y++) pixels.copy(raw, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(raw, { level: 6 })), chunk('IEND', Buffer.alloc(0))]);
+  return encodePng(width, height, pixels);
 }
 
-module.exports = { productArtworkSvg, pngBuffer };
+function encodePng(width, height, pixels) {
+  const crcTable = encodePng.crcTable || (encodePng.crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  }));
+  const crc = buffer => {
+    let c = 0xffffffff;
+    for (const byte of buffer) c = crcTable[(c ^ byte) & 255] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type, data) => {
+    const typeBuffer = Buffer.from(type);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const crcBuffer = Buffer.alloc(4);
+    crcBuffer.writeUInt32BE(crc(Buffer.concat([typeBuffer, data])));
+    return Buffer.concat([length, typeBuffer, data, crcBuffer]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const raw = Buffer.alloc((width * 4 + 1) * height);
+  for (let y = 0; y < height; y++) pixels.copy(raw, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', zlib.deflateSync(raw, { level: 6 })),
+    chunk('IEND', Buffer.alloc(0))
+  ]);
+}
+
+let cachedFaviconPng = null;
+function faviconPngBuffer() {
+  if (cachedFaviconPng) return cachedFaviconPng;
+  const size = 32;
+  const pixels = Buffer.alloc(size * size * 4);
+  const paint = (x, y, c) => {
+    if (x < 0 || y < 0 || x >= size || y >= size) return;
+    const o = (y * size + x) * 4;
+    pixels[o] = c[0]; pixels[o + 1] = c[1]; pixels[o + 2] = c[2]; pixels[o + 3] = 255;
+  };
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const border = x < 2 || y < 2 || x >= size - 2 || y >= size - 2;
+      paint(x, y, border ? [72, 211, 223] : [16, 25, 31]);
+    }
+  }
+  for (let i = 0; i < 12; i++) {
+    paint(18 - Math.floor(i * 0.65), 6 + i, [72, 211, 223]);
+    paint(19 - Math.floor(i * 0.65), 6 + i, [72, 211, 223]);
+    paint(14 + Math.floor(i * 0.5), 14 + i, [72, 211, 223]);
+    paint(15 + Math.floor(i * 0.5), 14 + i, [72, 211, 223]);
+  }
+  for (let x = 11; x <= 20; x++) paint(x, 16, [72, 211, 223]);
+  cachedFaviconPng = encodePng(size, size, pixels);
+  return cachedFaviconPng;
+}
+
+function faviconIcoBuffer() {
+  const png = faviconPngBuffer();
+  const header = Buffer.alloc(22);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(1, 4);
+  header[6] = 32;
+  header[7] = 32;
+  header[8] = 0;
+  header[9] = 0;
+  header.writeUInt16LE(1, 10);
+  header.writeUInt16LE(32, 12);
+  header.writeUInt32LE(png.length, 14);
+  header.writeUInt32LE(22, 18);
+  return Buffer.concat([header, png]);
+}
+
+module.exports = { productArtworkSvg, pngBuffer, faviconPngBuffer, faviconIcoBuffer };
 

@@ -2,10 +2,11 @@ const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
 const crypto = require('node:crypto');
 const path = require('node:path');
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
-  DATA_DIR, STORE_FILE, CATALOG_FILE, PROD, SESSION_KEY,
+  ON_VERCEL, DATA_DIR, STORE_FILE, CATALOG_FILE, PROD, SESSION_KEY,
   readLegacyLocalKey
-} = require('./config');
+} = u(require('./config'));
 
 let store = null;
 let writeQueue = Promise.resolve();
@@ -38,6 +39,17 @@ function encryptStorePayload(data, secret) {
 }
 
 function loadCatalogSeed() {
+  const candidates = [
+    CATALOG_FILE,
+    path.join(process.cwd(), 'data', 'catalog.json'),
+    path.resolve(__dirname, '..', 'data', 'catalog.json'),
+    '/var/task/data/catalog.json'
+  ].filter(Boolean);
+  for (const file of candidates) {
+    if (fsSync.existsSync(file)) {
+      return JSON.parse(fsSync.readFileSync(file, 'utf8'));
+    }
+  }
   return JSON.parse(fsSync.readFileSync(CATALOG_FILE, 'utf8'));
 }
 
@@ -118,7 +130,11 @@ async function initStore() {
     }
   } catch (error) {
     if (error.code !== 'ENOENT') {
-      throw new Error('Store data could not be read. Back up .data/store.json and restore valid JSON before restarting.');
+      if (ON_VERCEL) {
+        console.warn('Resetting temporary Vercel store cache after key/format mismatch.');
+      } else {
+        throw new Error('Store data could not be read. Back up .data/store.json and restore valid JSON before restarting.');
+      }
     }
     store = { products: catalogSeed, orders: [], sessions: {} };
     await saveStore();
@@ -169,7 +185,7 @@ function verifySigned(value) {
 
 function isRequestSecure(req) {
   if (req?.socket?.encrypted) return true;
-  if (process.env.TRUST_PROXY === '1') {
+  if (ON_VERCEL || process.env.TRUST_PROXY === '1') {
     const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
     return proto === 'https';
   }

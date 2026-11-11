@@ -1,6 +1,7 @@
-const { formatPrice, tashkentDayStart } = require('./config');
-const { getStore, productById, saveStore } = require('./storage');
-const { pngBuffer } = require('./artwork');
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
+const { formatPrice, tashkentDayStart } = u(require('./config'));
+const { getStore, productById, saveStore } = u(require('./storage'));
+const { pngBuffer } = u(require('./artwork'));
 
 let botStopped = false;
 let pollTimer = null;

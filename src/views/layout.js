@@ -1,10 +1,11 @@
 const crypto = require('node:crypto');
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   PUBLIC_ORIGIN, TAG_KEYS, esc, safeJson, localized, formatPrice, canonical, localizedRoute, localPath
-} = require('../config');
-const { tr } = require('../i18n');
-const { productById } = require('../storage');
-const { renderTemplate } = require('../templateEngine');
+} = u(require('../config'));
+const { tr } = u(require('../i18n'));
+const { productById } = u(require('../storage'));
+const { renderTemplate } = u(require('../templateEngine'));
 
 function csrfField(session) {
   return `<input type="hidden" name="csrf" value="${esc(session.csrf || '')}">`;

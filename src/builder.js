@@ -1,4 +1,5 @@
-const { BUILD_FIELDS } = require('./config');
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
+const { BUILD_FIELDS } = u(require('./config'));
 
 function normalizeToken(raw) {
   return String(raw || '').toUpperCase().replace(/\s+/g, '');

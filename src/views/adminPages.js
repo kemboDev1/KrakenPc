@@ -1,10 +1,11 @@
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   STATUSES, esc, localized, formatPrice, tashkentDayStart
-} = require('../config');
-const { tr } = require('../i18n');
-const { getStore } = require('../storage');
-const { renderTemplate } = require('../templateEngine');
-const { csrfField, statusText, renderPage } = require('./layout');
+} = u(require('../config'));
+const { tr } = u(require('../i18n'));
+const { getStore } = u(require('../storage'));
+const { renderTemplate } = u(require('../templateEngine'));
+const { csrfField, statusText, renderPage } = u(require('./layout'));
 
 function adminLoginPage(req, res, session, alert = '') {
   let formHtml;

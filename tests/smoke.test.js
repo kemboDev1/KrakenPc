@@ -227,12 +227,22 @@ test('static assets, SEO files, zero-cookie static requests, and legacy .html 30
     ['/robots.txt', 'text/plain'],
     ['/sitemap.xml', 'application/xml'],
     ['/favicon.svg', 'image/svg+xml'],
+    ['/favicon.png', 'image/png'],
+    ['/favicon.ico', 'image/x-icon'],
     ['/art/pc-aurora-7800.svg', 'image/svg+xml']
   ]) {
     const res = await fetch(`${baseUrl}${route}`);
     assert.equal(res.status, 200, `Expected 200 for ${route}`);
     assert.ok(res.headers.get('content-type')?.includes(type), `Expected ${type} for ${route}`);
     assert.equal(res.headers.getSetCookie().length, 0, `Static route ${route} should not set session cookie`);
+    if (route === '/favicon.png') {
+      const buf = Buffer.from(await res.arrayBuffer());
+      assert.deepEqual(buf.subarray(0, 4), Buffer.from([137, 80, 78, 71]));
+    }
+    if (route === '/favicon.ico') {
+      const buf = Buffer.from(await res.arrayBuffer());
+      assert.deepEqual(buf.subarray(0, 4), Buffer.from([0, 0, 1, 0]));
+    }
   }
 
   const redirIndex = await fetch(`${baseUrl}/index.html`, { redirect: 'manual' });
@@ -449,4 +459,68 @@ test('Checkout preserves input on 400, accepts Uzbek apostrophes, and Admin mana
 
   const adminAfterCancel = await client.get('/admin');
   assert.ok(adminAfterCancel.body.includes('id="stock-mouse-g502" name="stock" type="number" min="0" max="999" value="11"'));
+});
+
+test('Vercel serverless exported handler boots cleanly without .env secrets or writable root', async () => {
+  const childScript = `
+    const http = require('node:http');
+    const os = require('node:os');
+    const cfg = require('./src/config');
+    const handler = require('./server');
+    if (!cfg.ON_VERCEL) throw new Error('Expected ON_VERCEL=true');
+    if (!cfg.DATA_DIR.startsWith(os.tmpdir())) throw new Error('Expected tmp DATA_DIR on Vercel, got ' + cfg.DATA_DIR);
+    const s = http.createServer(handler);
+    s.listen(0, '127.0.0.1', async () => {
+      try {
+        const port = s.address().port;
+        const rHome = await fetch('http://127.0.0.1:' + port + '/');
+        const rIco = await fetch('http://127.0.0.1:' + port + '/favicon.ico');
+        const rAdmin = await fetch('http://127.0.0.1:' + port + '/admin');
+        const homeHtml = await rHome.text();
+        const adminHtml = await rAdmin.text();
+        console.log(JSON.stringify({
+          homeStatus: rHome.status,
+          icoStatus: rIco.status,
+          adminStatus: rAdmin.status,
+          hasKraken: homeHtml.includes('KrakenPC'),
+          adminLocked: adminHtml.includes('setup-note'),
+          publicOrigin: cfg.PUBLIC_ORIGIN
+        }));
+      } finally {
+        s.close(() => process.exit(0));
+      }
+    });
+  `;
+  const env = {
+    ...process.env,
+    VERCEL: '1',
+    NODE_ENV: 'production',
+    VERCEL_URL: 'krakenpc-preview.vercel.app',
+    ADMIN_PASSWORD: '',
+    SESSION_SECRET: '',
+    TELEGRAM_BOT_TOKEN: '',
+    TELEGRAM_ADMIN_ID: ''
+  };
+  delete env.KRAKEN_DATA_DIR;
+  delete env.PUBLIC_URL;
+
+  const result = await new Promise((resolve, reject) => {
+    const proc = spawn(process.execPath, ['-e', childScript], { cwd: ROOT, env });
+    let out = '';
+    let err = '';
+    proc.stdout.on('data', d => { out += d.toString('utf8'); });
+    proc.stderr.on('data', d => { err += d.toString('utf8'); });
+    proc.on('exit', code => {
+      if (code !== 0) reject(new Error(`Exited ${code}: ${err}\n${out}`));
+      else resolve(out.trim().split(/\r?\n/).at(-1));
+    });
+  });
+
+  const parsed = JSON.parse(result);
+  assert.equal(parsed.homeStatus, 200);
+  assert.equal(parsed.icoStatus, 200);
+  assert.equal(parsed.adminStatus, 200);
+  assert.equal(parsed.hasKraken, true);
+  assert.equal(parsed.adminLocked, true);
+  assert.equal(parsed.publicOrigin, 'https://krakenpc-preview.vercel.app');
 });

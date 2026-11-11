@@ -1,17 +1,18 @@
+const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   CATEGORIES, BUILD_FIELDS, PUBLIC_ORIGIN,
   esc, localized, formatPrice, canonical, localizedRoute
-} = require('../config');
-const { tr } = require('../i18n');
-const { getStore, productById } = require('../storage');
-const { renderTemplate } = require('../templateEngine');
+} = u(require('../config'));
+const { tr } = u(require('../i18n'));
+const { getStore, productById } = u(require('../storage'));
+const { renderTemplate } = u(require('../templateEngine'));
 const {
   evaluateBuild, extractSocket, extractDdr, extractPsuWatts, estimateCpuWatts, estimateGpuWatts
-} = require('../builder');
+} = u(require('../builder'));
 const {
   csrfField, iconSvg, productImage, priceMarkup, tagMarkup, stockTag,
   cardGrid, cartTotals, orderSummary, renderPage
-} = require('./layout');
+} = u(require('./layout'));
 
 function productSchema(product, session) {
   const item = {

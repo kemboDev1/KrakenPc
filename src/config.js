@@ -1,8 +1,29 @@
 const fsSync = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-const ROOT = path.resolve(__dirname, '..');
+function resolveProjectRoot() {
+  const candidates = [
+    typeof __dirname === 'string' ? path.resolve(__dirname, '..') : '',
+    process.cwd(),
+    typeof require.main?.filename === 'string' ? path.dirname(require.main.filename) : '',
+    '/var/task'
+  ].filter(Boolean);
+
+  for (const dir of candidates) {
+    if (
+      fsSync.existsSync(path.join(dir, 'views', 'layout.html')) ||
+      fsSync.existsSync(path.join(dir, 'data', 'catalog.json'))
+    ) {
+      return dir;
+    }
+  }
+  return candidates[0] || process.cwd();
+}
+
+const ROOT = resolveProjectRoot();
+const ON_VERCEL = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.VERCEL_URL);
 
 function loadDotEnv() {
   try {
@@ -29,7 +50,7 @@ loadDotEnv();
 
 const DATA_DIR = process.env.KRAKEN_DATA_DIR
   ? path.resolve(process.env.KRAKEN_DATA_DIR)
-  : path.join(ROOT, '.data');
+  : (ON_VERCEL ? path.join(os.tmpdir(), 'krakenpc-data') : path.join(ROOT, '.data'));
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
 const SESSION_KEY_FILE = path.join(DATA_DIR, 'session.key');
 const CATALOG_FILE = path.join(ROOT, 'data', 'catalog.json');
@@ -37,7 +58,10 @@ const CATALOG_FILE = path.join(ROOT, 'data', 'catalog.json');
 const rawPort = Number(process.env.PORT || 3000);
 const PORT = Number.isInteger(rawPort) && rawPort >= 1 && rawPort <= 65535 ? rawPort : 3000;
 const HOST = process.env.HOST || '127.0.0.1';
-const PUBLIC_ORIGIN = String(process.env.PUBLIC_URL || '').replace(/\/$/, '');
+const autoVercelOrigin = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+const PUBLIC_ORIGIN = String(process.env.PUBLIC_URL || autoVercelOrigin).replace(/\/$/, '');
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const PROD = NODE_ENV === 'production';
 
@@ -52,30 +76,34 @@ function readLegacyLocalKey() {
 }
 
 function localSessionKey() {
-  if (PROD) return '';
-  fsSync.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
-  const existing = readLegacyLocalKey();
-  if (existing) return existing;
-  const generated = crypto.randomBytes(48).toString('base64url');
-  fsSync.writeFileSync(SESSION_KEY_FILE, generated + '\n', { mode: 0o600, flag: 'wx' });
-  return generated;
+  if (PROD && !ON_VERCEL) return '';
+  try {
+    fsSync.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+    const existing = readLegacyLocalKey();
+    if (existing) return existing;
+    const generated = crypto.randomBytes(48).toString('base64url');
+    fsSync.writeFileSync(SESSION_KEY_FILE, generated + '\n', { mode: 0o600, flag: 'wx' });
+    return generated;
+  } catch {
+    return crypto.randomBytes(48).toString('base64url');
+  }
 }
 
 const SESSION_KEY = process.env.SESSION_SECRET || localSessionKey();
-if (PROD && SESSION_KEY.length < 32) {
+if (!ON_VERCEL && PROD && SESSION_KEY.length < 32) {
   throw new Error('Set a SESSION_SECRET of at least 32 characters before running in production.');
 }
 if (!SESSION_KEY) {
   throw new Error('Set SESSION_SECRET in .env first.');
 }
-if (PROD && String(process.env.ADMIN_PASSWORD || '').length < 16) {
+if (!ON_VERCEL && PROD && String(process.env.ADMIN_PASSWORD || '').length < 16) {
   throw new Error('Set a unique ADMIN_PASSWORD of at least 16 characters before running in production.');
 }
 if (!process.env.ADMIN_PASSWORD) {
-  console.warn('Admin orders are locked. Set ADMIN_PASSWORD in .env to use the admin panel.');
+  console.warn('Admin orders are locked. Set ADMIN_PASSWORD in environment variables to use the admin panel.');
 }
 if (!process.env.SESSION_SECRET) {
-  console.warn('Using local fallback key in .data/session.key. Set SESSION_SECRET in .env before production.');
+  console.warn('Using fallback key for sessions. Set SESSION_SECRET in environment variables for persistent production sessions.');
 }
 
 const CATEGORIES = ['pcs', 'graphics', 'processors', 'motherboards', 'memory', 'storage', 'power', 'cooling', 'cases', 'monitors', 'peripherals'];
@@ -141,7 +169,7 @@ function tashkentDayStart(now = new Date()) {
 }
 
 module.exports = {
-  ROOT, DATA_DIR, STORE_FILE, SESSION_KEY_FILE, CATALOG_FILE,
+  ROOT, ON_VERCEL, DATA_DIR, STORE_FILE, SESSION_KEY_FILE, CATALOG_FILE,
   PORT, HOST, PUBLIC_ORIGIN, NODE_ENV, PROD, SESSION_KEY,
   CATEGORIES, STATUSES, TAG_KEYS, CATEGORY_KEYS, BUILD_FIELDS,
   readLegacyLocalKey, esc, safeJson, localized, formatPrice,
