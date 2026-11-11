@@ -142,7 +142,38 @@ const formatPrice = (price, lang) => new Intl.NumberFormat(
   { maximumFractionDigits: 0 }
 ).format(Number(price || 0)) + (lang === 'ru' ? ' сум' : lang === 'en' ? ' UZS' : ' so‘m');
 
-const canonical = route => (PUBLIC_ORIGIN ? PUBLIC_ORIGIN + route : '');
+const LEGACY_PRODUCT_IDS = {
+  'pc-aurora-7800': 'pc-r7-7800x3d-4070s',
+  'pc-phantom-4080': 'pc-i7-14700kf-4080s',
+  'pc-frost-4060': 'pc-i5-14400f-4060',
+  'pc-starter-7600': 'pc-r5-5600-7600'
+};
+const LEGACY_SLUG_REDIRECTS = {
+  'kraken-aurora-7800x3d-rtx4070s': 'ryzen-7-7800x3d-rtx-4070-super',
+  'kraken-phantom-rtx4080-super': 'core-i7-14700kf-rtx-4080-super',
+  'kraken-frost-rtx4060': 'core-i5-14400f-rtx-4060',
+  'kraken-starter-rx7600': 'ryzen-5-5600-rx-7600'
+};
+
+function requestOrigin(req) {
+  if (process.env.PUBLIC_URL) return String(process.env.PUBLIC_URL).replace(/\/$/, '');
+  if (req && req.headers) {
+    const rawHost = (ON_VERCEL || process.env.TRUST_PROXY === '1')
+      ? String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim()
+      : String(req.headers.host || '').trim();
+    if (rawHost && /^[a-z0-9.-]+(:\d+)?$/i.test(rawHost)) {
+      const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+      const proto = (forwardedProto === 'https' || ON_VERCEL) ? 'https' : 'http';
+      return `${proto}://${rawHost}`;
+    }
+  }
+  return PUBLIC_ORIGIN;
+}
+
+const canonical = (route, req) => {
+  const origin = requestOrigin(req);
+  return origin ? origin + route : '';
+};
 
 function localizedRoute(route, lang) {
   const url = new URL(route || '/', 'http://local');
@@ -172,7 +203,8 @@ module.exports = {
   ROOT, ON_VERCEL, DATA_DIR, STORE_FILE, SESSION_KEY_FILE, CATALOG_FILE,
   PORT, HOST, PUBLIC_ORIGIN, NODE_ENV, PROD, SESSION_KEY,
   CATEGORIES, STATUSES, TAG_KEYS, CATEGORY_KEYS, BUILD_FIELDS,
+  LEGACY_PRODUCT_IDS, LEGACY_SLUG_REDIRECTS,
   readLegacyLocalKey, esc, safeJson, localized, formatPrice,
-  canonical, localizedRoute, localPath, tashkentDayStart
+  requestOrigin, canonical, localizedRoute, localPath, tashkentDayStart
 };
 

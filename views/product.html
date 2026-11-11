@@ -1,9 +1,9 @@
 <section class="product-detail container">
   <div class="product-detail-art">
-    <a class="breadcrumb" href="/catalog?cat={{categoryEncoded}}">{{navCatalog}} <span>›</span> {{categoryLabel}}</a>
+    <a class="breadcrumb" href="/catalog?cat={{categoryEncoded}}">{{navCatalog}} {{{iconChevron}}} {{categoryLabel}}</a>
     <div class="detail-art-frame">
       {{{imageHtml}}}
-      <span class="detail-art-label">KRAKENPC · {{brand}}</span>
+      <span class="detail-art-label">{{brand}} · {{categoryLabel}}</span>
     </div>
   </div>
   <div class="product-detail-copy">
@@ -14,7 +14,7 @@
     <h1>{{name}}</h1>
     <p class="detail-description">{{description}}</p>
     <div class="detail-price">{{{priceHtml}}}</div>
-    <p class="delivery-note"><span>✓</span> {{deliveryNoteText}}</p>
+    <p class="delivery-note">{{{iconCheck}}} {{deliveryNoteText}}</p>
     <div class="detail-actions">
       <form action="/cart/add" method="post" data-async-form="cart-add" data-product-id="{{id}}">
         {{{csrfField}}}

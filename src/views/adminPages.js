@@ -5,12 +5,12 @@ const {
 const { tr } = u(require('../i18n'));
 const { getStore } = u(require('../storage'));
 const { renderTemplate } = u(require('../templateEngine'));
-const { csrfField, statusText, renderPage } = u(require('./layout'));
+const { csrfField, iconSvg, statusText, renderPage } = u(require('./layout'));
 
 function adminLoginPage(req, res, session, alert = '') {
   let formHtml;
   if (!process.env.ADMIN_PASSWORD) {
-    formHtml = `<div class="setup-note"><span class="state-icon">◇</span><h2>${esc(tr(session, 'adminMissingPassword'))}</h2><p>${esc(tr(session, 'footerPolicy'))}</p></div>`;
+    formHtml = `<div class="setup-note"><span class="state-icon">${iconSvg('lock')}</span><h2>${esc(tr(session, 'adminMissingPassword'))}</h2><p>${esc(tr(session, 'footerPolicy'))}</p></div>`;
   } else {
     formHtml = `<form class="admin-login" method="post" action="/admin/login">
       ${csrfField(session)}
@@ -85,7 +85,7 @@ function adminPage(req, res, session, url) {
         statusOptionsHtml: STATUSES.map(status => `<option value="${esc(status)}" ${order.status === status ? 'selected' : ''}>${esc(statusText(status, session))}</option>`).join(''),
         updateStatusLabel: tr(session, 'updateStatus')
       })).join('')
-    : `<div class="empty-state"><span class="state-icon">⌁</span><h2>${esc(tr(session, 'ordersEmpty'))}</h2></div>`;
+    : `<div class="empty-state"><span class="state-icon">${iconSvg('inbox')}</span><h2>${esc(tr(session, 'ordersEmpty'))}</h2></div>`;
 
   const stockRowsHtml = store.products.map(p => renderTemplate('partials/stock-row', {
     lowClass: p.stock <= 4 ? 'is-low' : '',

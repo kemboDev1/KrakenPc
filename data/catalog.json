@@ -1,27 +1,27 @@
 [
   {
-    "id":"pc-aurora-7800",
-    "slug":"kraken-aurora-7800x3d-rtx4070s",
-    "type":"pc","category":"pcs","brand":"KrakenPC","tag":"mostLoved","stock":6,"price":21990000,"oldPrice":23990000,
-    "name":{"uz":"Kraken Aurora · RTX 4070 Super","ru":"Kraken Aurora · RTX 4070 Super","en":"Kraken Aurora · RTX 4070 Super"},
+    "id":"pc-r7-7800x3d-4070s",
+    "slug":"ryzen-7-7800x3d-rtx-4070-super",
+    "type":"pc","category":"pcs","brand":"AMD / MSI","tag":"mostLoved","stock":6,"price":21990000,"oldPrice":23990000,
+    "name":{"uz":"Ryzen 7 7800X3D · RTX 4070 Super","ru":"Ryzen 7 7800X3D · RTX 4070 Super","en":"Ryzen 7 7800X3D · RTX 4070 Super"},
     "description":{"uz":"Silliq 1440p o‘yin va jonli efir uchun sinovdan o‘tkazilgan kuchli yig‘ma. Windows o‘rnatilgan, bir yil servis kafolati.","ru":"Готовая система для плавного гейминга в 1440p и трансляций. Windows установлена, год сервисной гарантии.","en":"A carefully tested build for smooth 1440p gaming and streaming. Windows installed, with one year of service warranty."},
     "specs":["AMD Ryzen 7 7800X3D","GeForce RTX 4070 SUPER 12 GB","32 GB DDR5 6000 MHz","2 TB NVMe SSD","B650 Wi-Fi motherboard","850 W 80+ Gold PSU","360 mm liquid cooling"],"image":"tower","featured":true
   },
   {
-    "id":"pc-phantom-4080","slug":"kraken-phantom-rtx4080-super","type":"pc","category":"pcs","brand":"KrakenPC","tag":"highEnd","stock":3,"price":36990000,
-    "name":{"uz":"Kraken Phantom · RTX 4080 Super","ru":"Kraken Phantom · RTX 4080 Super","en":"Kraken Phantom · RTX 4080 Super"},
+    "id":"pc-i7-14700kf-4080s","slug":"core-i7-14700kf-rtx-4080-super","type":"pc","category":"pcs","brand":"Intel / Gigabyte","tag":"highEnd","stock":3,"price":36990000,
+    "name":{"uz":"Core i7-14700KF · RTX 4080 Super","ru":"Core i7-14700KF · RTX 4080 Super","en":"Core i7-14700KF · RTX 4080 Super"},
     "description":{"uz":"4K o‘yin va og‘ir render uchun yuqori darajadagi tizim. Sokin sovitish, tartibli kabel boshqaruvi va yakuniy stress-test.","ru":"Система высокого класса для игр в 4K и тяжёлого рендеринга. Тихое охлаждение, аккуратная сборка и финальный стресс-тест.","en":"A high-end system for 4K gaming and demanding renders. Quiet cooling, tidy cable management, and a final stress test."},
     "specs":["Intel Core i7-14700KF","GeForce RTX 4080 SUPER 16 GB","64 GB DDR5 6400 MHz","2 TB Gen 4 NVMe SSD","Z790 Wi-Fi motherboard","1000 W 80+ Gold PSU","360 mm liquid cooling"],"image":"tower","featured":true
   },
   {
-    "id":"pc-frost-4060","slug":"kraken-frost-rtx4060","type":"pc","category":"pcs","brand":"KrakenPC","tag":"greatValue","stock":8,"price":10990000,
-    "name":{"uz":"Kraken Frost · RTX 4060","ru":"Kraken Frost · RTX 4060","en":"Kraken Frost · RTX 4060"},
+    "id":"pc-i5-14400f-4060","slug":"core-i5-14400f-rtx-4060","type":"pc","category":"pcs","brand":"Intel / MSI","tag":"greatValue","stock":8,"price":10990000,
+    "name":{"uz":"Core i5-14400F · RTX 4060","ru":"Core i5-14400F · RTX 4060","en":"Core i5-14400F · RTX 4060"},
     "description":{"uz":"Birinchi gaming kompyuteri va kundalik ishlar uchun ajoyib start. 1080p o‘yinlar uchun balanslangan yig‘ma.","ru":"Отличный старт для первого игрового ПК и повседневных задач. Сбалансированная сборка для игр в 1080p.","en":"A strong first gaming PC for everyday work and 1080p play. Balanced components without paying for performance you do not need."},
     "specs":["Intel Core i5-14400F","GeForce RTX 4060 8 GB","16 GB DDR5 5600 MHz","1 TB NVMe SSD","B760 motherboard","650 W 80+ Bronze PSU","Air tower cooler"],"image":"tower"
   },
   {
-    "id":"pc-starter-7600","slug":"kraken-starter-rx7600","type":"pc","category":"pcs","brand":"KrakenPC","tag":"entry","stock":9,"price":8290000,
-    "name":{"uz":"Kraken Starter · RX 7600","ru":"Kraken Starter · RX 7600","en":"Kraken Starter · RX 7600"},
+    "id":"pc-r5-5600-7600","slug":"ryzen-5-5600-rx-7600","type":"pc","category":"pcs","brand":"AMD / Radeon","tag":"entry","stock":9,"price":8290000,
+    "name":{"uz":"Ryzen 5 5600 · RX 7600","ru":"Ryzen 5 5600 · RX 7600","en":"Ryzen 5 5600 · RX 7600"},
     "description":{"uz":"Kundalik o‘yin va o‘qish uchun hamyonbop to‘liq PC. Keyin xotira yoki videokartani osongina yangilash mumkin.","ru":"Доступный готовый ПК для повседневных игр и учёбы. Позже легко добавить память или заменить видеокарту.","en":"An affordable complete PC for gaming and study. Upgrade the memory or graphics card as your needs grow."},
     "specs":["AMD Ryzen 5 5600","Radeon RX 7600 8 GB","16 GB DDR4 3600 MHz","1 TB NVMe SSD","B550 motherboard","650 W 80+ Bronze PSU","Quiet air cooling"],"image":"tower"
   },

@@ -18,6 +18,22 @@
     return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Number(amount || 0)) + suffix;
   }
 
+  function createSvgIcon(pathD) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'icon');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.9');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', pathD);
+    svg.appendChild(p);
+    return svg;
+  }
+
   function showToast(message, { actionHref = '', actionLabel = '', tone = 'info' } = {}) {
     const region = document.getElementById('toast-region');
     if (!region || !message) return;
@@ -44,8 +60,8 @@
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'toast-close';
-    closeBtn.setAttribute('aria-label', '×');
-    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', S.cancel || 'Close');
+    closeBtn.appendChild(createSvgIcon('M18 6 6 18M6 6l12 12'));
     closeBtn.addEventListener('click', () => toast.remove());
     toast.appendChild(closeBtn);
 
@@ -97,7 +113,7 @@
     const next = theme === 'light' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#10191f' : '#edf2f3');
+    if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#0b1118' : '#f1f5f6');
     const schemeMeta = document.querySelector('meta[name="color-scheme"]');
     if (schemeMeta) schemeMeta.setAttribute('content', next);
   }
@@ -106,16 +122,26 @@
   const settingsForm = document.querySelector('[data-settings-form]');
   if (settingsForm) {
     const themeSelect = settingsForm.querySelector('#theme');
+    const themeToggleBtn = settingsForm.querySelector('[data-theme-toggle]');
     const langSelect = settingsForm.querySelector('#language');
+
+    const saveTheme = async chosen => {
+      applyTheme(chosen);
+      if (themeSelect) themeSelect.value = chosen;
+      try {
+        await postJson('/api/settings', { theme: chosen });
+      } catch {
+        settingsForm.submit();
+      }
+    };
+
     if (themeSelect) {
-      themeSelect.addEventListener('change', async () => {
-        const chosen = themeSelect.value;
-        applyTheme(chosen);
-        try {
-          await postJson('/api/settings', { theme: chosen });
-        } catch {
-          settingsForm.submit();
-        }
+      themeSelect.addEventListener('change', () => saveTheme(themeSelect.value));
+    }
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        saveTheme(next);
       });
     }
     if (langSelect) {
@@ -368,7 +394,7 @@
       row.href = `/product/${encodeURIComponent(item.slug)}`;
 
       const img = document.createElement('img');
-      img.src = `/art/${encodeURIComponent(item.id)}.svg`;
+      img.src = item.imageUrl || `/images/${encodeURIComponent(item.id)}.jpg`;
       img.alt = '';
       img.width = 56;
       img.height = 42;
@@ -527,11 +553,11 @@
       const psuEl = builderRoot.querySelector('[data-psu-watts]');
       if (psuEl) psuEl.textContent = `${psuWatts || '—'} W`;
 
-      const barFill = builderRoot.querySelector('.power-bar-fill');
-      if (barFill) {
+      const powerProgress = builderRoot.querySelector('.power-progress');
+      if (powerProgress) {
         const pct = psuWatts > 0 ? Math.min(100, Math.round((estWatts / psuWatts) * 100)) : 50;
-        barFill.style.width = `${pct}%`;
-        barFill.classList.toggle('is-warn', !psuOk);
+        powerProgress.value = pct;
+        powerProgress.classList.toggle('is-warn', !psuOk);
       }
 
       const statusBadge = builderRoot.querySelector('[data-builder-status]');
@@ -555,13 +581,33 @@
       const addBtn = builderRoot.querySelector('[data-builder-add]');
       if (addBtn) addBtn.disabled = !compatible;
 
+      const mainVisual = builderRoot.querySelector('[data-builder-visual] img');
+      const heroPick = picks.case || picks.gpu;
+      if (mainVisual && heroPick?.imageUrl) {
+        mainVisual.src = heroPick.imageUrl;
+        mainVisual.alt = heroPick.name;
+      }
+      const caseTag = builderRoot.querySelector('[data-builder-case-name]');
+      if (caseTag && heroPick) caseTag.textContent = heroPick.name;
+
+      ['cpu', 'gpu', 'board', 'case'].forEach(field => {
+        const thumbImg = builderRoot.querySelector(`[data-builder-thumb="${field}"] img`);
+        if (thumbImg && picks[field]?.imageUrl) {
+          thumbImg.src = picks[field].imageUrl;
+          thumbImg.alt = picks[field].name;
+        }
+      });
+
       Object.entries(picks).forEach(([field, item]) => {
         const row = builderRoot.querySelector(`[data-builder-row="${field}"]`);
         if (!row) return;
         const nameSpan = row.querySelector('span');
         const markB = row.querySelector('b');
         if (nameSpan) nameSpan.textContent = item ? item.name : '—';
-        if (markB) markB.textContent = compatible ? '✓' : '!';
+        if (markB) {
+          markB.className = compatible ? 'is-ok' : 'is-bad';
+          markB.replaceChildren(createSvgIcon(compatible ? 'M5 13l4 4L19 7' : 'M12 9v4m0 4h.01M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z'));
+        }
       });
 
       const nextUrl = new URL(window.location.href);

@@ -229,7 +229,8 @@ test('static assets, SEO files, zero-cookie static requests, and legacy .html 30
     ['/favicon.svg', 'image/svg+xml'],
     ['/favicon.png', 'image/png'],
     ['/favicon.ico', 'image/x-icon'],
-    ['/art/pc-aurora-7800.svg', 'image/svg+xml']
+    ['/art/pc-r7-7800x3d-4070s.svg', 'image/svg+xml'],
+    ['/images/pc-r7-7800x3d-4070s.jpg', 'image/jpeg']
   ]) {
     const res = await fetch(`${baseUrl}${route}`);
     assert.equal(res.status, 200, `Expected 200 for ${route}`);
@@ -254,6 +255,10 @@ test('static assets, SEO files, zero-cookie static requests, and legacy .html 30
   assert.equal(redirCatalog.status, 301);
   assert.equal(redirCatalog.headers.get('location'), '/catalog?cat=graphics');
 
+  const redirLegacyProduct = await fetch(`${baseUrl}/product/kraken-aurora-7800x3d-rtx4070s`, { redirect: 'manual' });
+  assert.equal(redirLegacyProduct.status, 301);
+  assert.equal(redirLegacyProduct.headers.get('location'), '/product/ryzen-7-7800x3d-rtx-4070-super');
+
   const malformed = await fetch(`${baseUrl}/%ZZ`);
   assert.equal(malformed.status, 400);
 
@@ -269,12 +274,14 @@ test('SSR pages render clean HTML from views/, structured JSON-LD, and compare a
   assert.ok(client.csrf.length > 10, 'Expected CSRF token rendered in page');
   assert.ok(home.body.includes('"@type":"WebSite"'), 'Expected WebSite schema JSON-LD');
   assert.ok(home.body.includes('"@type":"Organization"'), 'Expected Organization schema JSON-LD');
+  assert.ok(!home.body.includes('Kraken Aurora'), 'Home should use real hardware product names');
   assert.ok(!/\{\{\{?[a-zA-Z0-9_.]+\}?\}\}/.test(home.body), 'No unreplaced template tokens should remain on home page');
 
-  const product = await client.get('/product/kraken-aurora-7800x3d-rtx4070s');
+  const product = await client.get('/product/ryzen-7-7800x3d-rtx-4070-super');
   assert.equal(product.status, 200);
   assert.ok(product.body.includes('"@type":"Product"'), 'Expected Product schema JSON-LD');
   assert.ok(product.body.includes('"@type":"BreadcrumbList"'), 'Expected BreadcrumbList schema JSON-LD');
+  assert.ok(!product.body.includes('KRAKENPC · '), 'Product detail badge should show manufacturer brand instead of store prefix');
   assert.ok(product.body.includes('/compare/toggle'), 'Expected Compare button form on product page');
 });
 
@@ -283,7 +290,9 @@ test('API search, CSRF enforcement, PC builder compatibility & socket mismatch',
   assert.equal(searchRes.status, 200);
   const searchData = await searchRes.json();
   assert.equal(searchData.ok, true);
-  assert.ok(searchData.items.some(item => item.id === 'gpu-4070s'));
+  const rtxItem = searchData.items.find(item => item.id === 'gpu-4070s');
+  assert.ok(rtxItem, 'Expected RTX 4070 Super in search results');
+  assert.equal(rtxItem.imageUrl, '/images/gpu-4070s.jpg');
 
   const client = new SessionClient(baseUrl);
   await client.get('/builder');
@@ -332,7 +341,7 @@ test('Cart supports >8 items, live summary API fields, and Compare enforces max 
   await client.get('/catalog');
 
   const skus = [
-    'pc-aurora-7800', 'pc-phantom-4080', 'pc-frost-4060', 'pc-starter-7600',
+    'pc-r7-7800x3d-4070s', 'pc-i7-14700kf-4080s', 'pc-i5-14400f-4060', 'pc-r5-5600-7600',
     'gpu-4070s', 'gpu-4060', 'cpu-7800x3d', 'cpu-7600', 'mb-b650', 'ram-fury32'
   ];
   for (const id of skus) {
@@ -496,13 +505,14 @@ test('Vercel serverless exported handler boots cleanly without .env secrets or w
     VERCEL: '1',
     NODE_ENV: 'production',
     VERCEL_URL: 'krakenpc-preview.vercel.app',
+    VERCEL_PROJECT_PRODUCTION_URL: '',
+    PUBLIC_URL: '',
     ADMIN_PASSWORD: '',
     SESSION_SECRET: '',
     TELEGRAM_BOT_TOKEN: '',
     TELEGRAM_ADMIN_ID: ''
   };
   delete env.KRAKEN_DATA_DIR;
-  delete env.PUBLIC_URL;
 
   const result = await new Promise((resolve, reject) => {
     const proc = spawn(process.execPath, ['-e', childScript], { cwd: ROOT, env });

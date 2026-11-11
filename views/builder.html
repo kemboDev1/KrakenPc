@@ -10,7 +10,7 @@
   <form class="builder-form" method="get" action="/builder">
     <input type="hidden" name="lang" value="{{lang}}">
     <div class="builder-form-heading">
-      <span class="builder-chip">K<span>PC</span></span>
+      <span class="builder-chip">{{{iconCpu}}}</span>
       <div>
         <h2>{{navBuilder}}</h2>
         <p data-builder-platform>{{socket}} · {{ddr}} · PCIe 4.0</p>
@@ -26,7 +26,11 @@
   </form>
 
   <aside class="builder-preview">
-    <div class="builder-preview-visual">{{{previewImageHtml}}}</div>
+    <div class="builder-preview-visual" data-builder-visual>
+      {{{previewImageHtml}}}
+      <span class="builder-preview-tag" data-builder-case-name>{{previewCaseName}}</span>
+    </div>
+    <div class="builder-thumb-strip" data-builder-thumbs>{{{previewStripHtml}}}</div>
     <p class="eyebrow"><span class="eyebrow-rule"></span>{{totalLabel}}</p>
     <strong data-builder-total>{{totalFormatted}}</strong>
     <p>{{componentsSummary}} · {{serviceIncluded}}</p>
@@ -35,7 +39,7 @@
         <span>{{builderPowerLabel}}: <strong data-est-watts>{{estimatedWatts}} W</strong></span>
         <span>{{builderPsuLabel}}: <strong data-psu-watts>{{psuWattsDisplay}} W</strong></span>
       </div>
-      <div class="power-bar"><span class="power-bar-fill {{powerWarnClass}}" style="width: {{powerPct}}%"></span></div>
+      <progress class="power-progress {{powerWarnClass}}" value="{{powerPct}}" max="100"></progress>
     </div>
     <p class="builder-error" role="alert" data-builder-error {{errorHiddenAttr}}>{{builderMismatch}}</p>
     <p class="builder-error builder-warning" role="status" data-builder-psu-warn {{psuWarnHiddenAttr}}>{{builderPsuWarning}}</p>
@@ -43,7 +47,7 @@
     <form method="post" action="/builder/add">
       {{{csrfField}}}
       {{{hiddenChoicesHtml}}}
-      <button class="button button-primary builder-submit" type="submit" data-builder-add {{addDisabledAttr}}>{{builderAction}} <span aria-hidden="true">↗</span></button>
+      <button class="button button-primary builder-submit" type="submit" data-builder-add {{addDisabledAttr}}>{{builderAction}} {{{iconArrow}}}</button>
     </form>
   </aside>
 </section>

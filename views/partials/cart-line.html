@@ -12,17 +12,17 @@
   <form class="quantity-form" method="post" action="/cart/update" data-async-form="cart-update" data-product-id="{{id}}">
     {{{csrfField}}}
     <input type="hidden" name="id" value="{{id}}">
-    <button type="button" class="qty-step" data-qty-step="-1" aria-label="−">−</button>
+    <button type="button" class="qty-step" data-qty-step="-1" aria-label="-">{{{iconMinus}}}</button>
     <label class="sr-only" for="qty-{{id}}">{{quantityLabel}}</label>
     <input id="qty-{{id}}" name="qty" type="number" min="0" max="{{maxQty}}" value="{{qty}}" inputmode="numeric">
-    <button type="button" class="qty-step" data-qty-step="1" aria-label="+">+</button>
-    <button class="quantity-update" type="submit" aria-label="{{updateLabel}}">↻</button>
+    <button type="button" class="qty-step" data-qty-step="1" aria-label="+">{{{iconPlus}}}</button>
+    <button class="quantity-update" type="submit" aria-label="{{updateLabel}}">{{{iconRefresh}}}</button>
   </form>
   <form method="post" action="/cart/remove" data-async-form="cart-remove" data-product-id="{{id}}">
     {{{csrfField}}}
     <input type="hidden" name="id" value="{{id}}">
     <input type="hidden" name="back" value="/cart">
-    <button class="remove-button" type="submit" aria-label="{{removeLabel}}">×</button>
+    <button class="remove-button" type="submit" aria-label="{{removeLabel}}">{{{iconTrash}}}</button>
   </form>
 </article>
 

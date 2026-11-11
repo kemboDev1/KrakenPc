@@ -1,7 +1,7 @@
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
-  CATEGORIES, BUILD_FIELDS, PUBLIC_ORIGIN,
-  esc, localized, formatPrice, canonical, localizedRoute
+  CATEGORIES, BUILD_FIELDS, requestOrigin,
+  esc, localized, formatPrice, localizedRoute
 } = u(require('../config'));
 const { tr } = u(require('../i18n'));
 const { getStore, productById } = u(require('../storage'));
@@ -10,11 +10,12 @@ const {
   evaluateBuild, extractSocket, extractDdr, extractPsuWatts, estimateCpuWatts, estimateGpuWatts
 } = u(require('../builder'));
 const {
-  csrfField, iconSvg, productImage, priceMarkup, tagMarkup, stockTag,
+  csrfField, iconSvg, productImageUrl, productImage, priceMarkup, tagMarkup, stockTag,
   cardGrid, cartTotals, orderSummary, renderPage
 } = u(require('./layout'));
 
-function productSchema(product, session) {
+function productSchema(product, session, req) {
+  const origin = requestOrigin(req);
   const item = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -29,20 +30,21 @@ function productSchema(product, session) {
       availability: product.stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
     }
   };
-  if (PUBLIC_ORIGIN) {
-    item.image = PUBLIC_ORIGIN + `/art/${encodeURIComponent(product.id)}.svg`;
-    item.url = PUBLIC_ORIGIN + localizedRoute(`/product/${product.slug}`, session.lang);
+  if (origin) {
+    item.image = origin + productImageUrl(product);
+    item.url = origin + localizedRoute(`/product/${product.slug}`, session.lang);
   }
   return item;
 }
 
-function breadcrumbSchema(items, session) {
+function breadcrumbSchema(items, session, req) {
+  const origin = requestOrigin(req);
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: items.map(([name, route], idx) => {
       const entry = { '@type': 'ListItem', position: idx + 1, name };
-      if (PUBLIC_ORIGIN && route) entry.item = PUBLIC_ORIGIN + localizedRoute(route, session.lang);
+      if (origin && route) entry.item = origin + localizedRoute(route, session.lang);
       return entry;
     })
   };
@@ -57,6 +59,7 @@ function redirectResponse(res, to = '/') {
 function forbiddenPage(req, res, session, message = '') {
   const msg = message || tr(session, 'csrfError');
   const content = renderTemplate('error', {
+    iconAlert: iconSvg('alert'),
     message: msg,
     returnHome: tr(session, 'returnHome')
   });
@@ -71,11 +74,13 @@ function forbiddenPage(req, res, session, message = '') {
 
 function homePage(req, res, session) {
   const store = getStore();
-  const hero = productById('pc-aurora-7800') || store.products[0];
+  const origin = requestOrigin(req);
+  const hero = productById('pc-r7-7800x3d-4070s') || store.products[0];
+  const servicePc = productById('pc-i7-14700kf-4080s') || hero;
   const builds = store.products.filter(p => p.type === 'pc');
   const popular = ['gpu-4070s', 'cpu-7800x3d', 'ram-fury32', 'monitor-lg27'].map(productById).filter(Boolean);
 
-  const siteUrl = canonical(localizedRoute('/', session.lang)) || undefined;
+  const siteUrl = origin ? origin + localizedRoute('/', session.lang) : undefined;
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -83,10 +88,10 @@ function homePage(req, res, session) {
     url: siteUrl,
     inLanguage: session.lang
   };
-  if (PUBLIC_ORIGIN) {
+  if (origin) {
     websiteSchema.potentialAction = {
       '@type': 'SearchAction',
-      target: PUBLIC_ORIGIN + '/catalog?q={search_term_string}',
+      target: origin + '/catalog?q={search_term_string}',
       'query-input': 'required name=search_term_string'
     };
   }
@@ -100,7 +105,7 @@ function homePage(req, res, session) {
   const warrantySummary = `12 ${session.lang === 'en' ? 'month' : session.lang === 'ru' ? 'мес.' : 'oy'} · ${session.lang === 'en' ? 'service cover' : session.lang === 'ru' ? 'сервиса' : 'servis kafolati'}`;
   const categoryLinksHtml = CATEGORIES
     .filter(cat => cat !== 'pcs')
-    .map(cat => `<a href="/catalog?cat=${encodeURIComponent(cat)}"><span class="category-dot dot-${esc(cat)}"></span><span>${esc(tr(session, cat))}</span><span aria-hidden="true">↗</span></a>`)
+    .map(cat => `<a href="/catalog?cat=${encodeURIComponent(cat)}"><span class="category-icon">${iconSvg(cat)}</span><span>${esc(tr(session, cat))}</span>${iconSvg('arrowUpRight')}</a>`)
     .join('');
 
   const content = renderTemplate('index', {
@@ -111,6 +116,7 @@ function homePage(req, res, session) {
     heroSecondary: tr(session, 'heroSecondary'),
     heroFeature: tr(session, 'heroFeature'),
     warrantySummary,
+    heroHref: hero ? `/product/${encodeURIComponent(hero.slug)}` : '/catalog?type=pc',
     heroImageHtml: hero ? productImage(hero, session, { hero: true, lazy: false }) : '',
     heroBadge: tr(session, 'heroBadge'),
     heroBadgelabel: tr(session, 'heroBadgelabel'),
@@ -126,18 +132,24 @@ function homePage(req, res, session) {
     pcsLabel: tr(session, 'pcs'),
     picksText: tr(session, 'picksText'),
     allPcs: tr(session, 'allPcs'),
-    buildsGridHtml: cardGrid(builds, session, { compact: true }),
+    buildsGridHtml: cardGrid(builds, session, { compact: true, lazy: false }),
     sectionPopular: tr(session, 'sectionPopular'),
     partsLabel: tr(session, 'parts'),
     popularText: tr(session, 'popularText'),
     allParts: tr(session, 'allParts'),
-    popularGridHtml: cardGrid(popular, session, { compact: true }),
+    popularGridHtml: cardGrid(popular, session, { compact: true, lazy: false }),
     sectionService: tr(session, 'sectionService'),
+    serviceImageHtml: servicePc ? productImage(servicePc, session, { hero: false, lazy: false }) : '',
     serviceTitle: tr(session, 'serviceTitle'),
-    serviceText: tr(session, 'serviceText'),
+    serviceText: tr(session, 'serviceBody'),
     serviceButton: tr(session, 'serviceButton'),
     navCatalog: tr(session, 'navCatalog'),
-    categoryLinksHtml
+    categoryLinksHtml,
+    iconArrow: iconSvg('arrowUpRight'),
+    iconCheck: iconSvg('check'),
+    iconCpu: iconSvg('processors'),
+    iconShield: iconSvg('shield'),
+    iconTruck: iconSvg('truck')
   });
 
   renderPage(req, res, session, {
@@ -147,7 +159,7 @@ function homePage(req, res, session) {
     active: 'home',
     canonicalRoute: '/',
     structured: [websiteSchema, orgSchema],
-    ogImage: hero ? `/art/${hero.id}.svg` : ''
+    ogImage: hero ? productImageUrl(hero) : ''
   });
 }
 
@@ -207,6 +219,7 @@ function catalogPage(req, res, session, url) {
   const content = renderTemplate('catalog', {
     navCatalog: tr(session, 'navCatalog'),
     navHome: tr(session, 'navHome'),
+    iconChevron: iconSvg('chevronRight'),
     heading,
     foundCount: String(products.length),
     productsFoundLabel: tr(session, 'productsFound'),
@@ -278,12 +291,14 @@ function productPage(req, res, session, product) {
   const compareLabel = comparing ? tr(session, 'removeCompare') : tr(session, 'addCompare');
 
   const relatedSectionHtml = related.length
-    ? `<section class="section container"><div class="section-heading"><div><p class="eyebrow"><span class="eyebrow-rule"></span>${esc(tr(session, 'sectionPopular'))}</p><h2>${esc(tr(session, product.category))}</h2></div><a class="text-link" href="/catalog?cat=${esc(product.category)}">${esc(tr(session, 'allParts'))} ↗</a></div>${cardGrid(related, session, { compact: true })}</section>`
+    ? `<section class="section container"><div class="section-heading"><div><p class="eyebrow"><span class="eyebrow-rule"></span>${esc(tr(session, 'sectionPopular'))}</p><h2>${esc(tr(session, product.category))}</h2></div><a class="text-link" href="/catalog?cat=${esc(product.category)}">${esc(tr(session, 'allParts'))} ${iconSvg('arrowUpRight')}</a></div>${cardGrid(related, session, { compact: true })}</section>`
     : '';
 
   const content = renderTemplate('product', {
     categoryEncoded: encodeURIComponent(product.category),
     navCatalog: tr(session, 'navCatalog'),
+    iconChevron: iconSvg('chevronRight'),
+    iconCheck: iconSvg('check'),
     categoryLabel: tr(session, product.category),
     imageHtml: productImage(product, session, { hero: false, lazy: false }),
     brand: product.brand,
@@ -317,15 +332,15 @@ function productPage(req, res, session, product) {
     [tr(session, 'navHome'), '/'],
     [tr(session, product.category), `/catalog?cat=${encodeURIComponent(product.category)}`],
     [localized(product, 'name', session), backUrl]
-  ], session);
+  ], session, req);
 
   renderPage(req, res, session, {
     title: localized(product, 'name', session),
     description: localized(product, 'description', session),
     content,
     canonicalRoute: backUrl,
-    structured: [productSchema(product, session), crumbs],
-    ogImage: `/art/${product.id}.svg`,
+    structured: [productSchema(product, session, req), crumbs],
+    ogImage: productImageUrl(product),
     ogType: 'product'
   });
 }
@@ -339,12 +354,13 @@ function simpleListPage(req, res, session, kind) {
   if (isFavorites) {
     const bodyHtml = products.length
       ? cardGrid(products, session)
-      : `<div class="empty-state"><span class="state-icon">♡</span><h2>${esc(tr(session, 'favoritesEmpty'))}</h2><p>${esc(tr(session, 'favoritesHint'))}</p><a class="button button-primary" href="/catalog">${esc(tr(session, 'navCatalog'))}</a></div>`;
+      : `<div class="empty-state"><span class="state-icon">${iconSvg('heart')}</span><h2>${esc(tr(session, 'favoritesEmpty'))}</h2><p>${esc(tr(session, 'favoritesHint'))}</p><a class="button button-primary" href="/catalog">${esc(tr(session, 'navCatalog'))}</a></div>`;
 
     const content = renderTemplate('favorites', {
       navFavorites: tr(session, 'navFavorites'),
       heading,
       navCatalog: tr(session, 'navCatalog'),
+      iconArrow: iconSvg('arrowUpRight'),
       bodyHtml
     });
     return renderPage(req, res, session, { title: heading, description: tr(session, 'favoritesHint'), content, noindex: true });
@@ -370,13 +386,14 @@ function simpleListPage(req, res, session, kind) {
     </div>
     <div class="compare-scroll"><table class="compare-table"><thead><tr><th>${esc(tr(session, 'product'))}</th><th>${esc(tr(session, 'priceRow'))}</th><th>${esc(tr(session, 'brandRow'))}</th><th>${esc(tr(session, 'stockRow'))}</th><th>${esc(tr(session, 'specs'))}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
   } else {
-    bodyHtml = `<div class="empty-state"><span class="state-icon">⇄</span><h2>${esc(tr(session, 'compareEmpty'))}</h2><p>${esc(tr(session, 'compareHint'))}</p><a class="button button-primary" href="/catalog">${esc(tr(session, 'navCatalog'))}</a></div>`;
+    bodyHtml = `<div class="empty-state"><span class="state-icon">${iconSvg('compare')}</span><h2>${esc(tr(session, 'compareEmpty'))}</h2><p>${esc(tr(session, 'compareHint'))}</p><a class="button button-primary" href="/catalog">${esc(tr(session, 'navCatalog'))}</a></div>`;
   }
 
   const content = renderTemplate('compare', {
     navCompare: tr(session, 'navCompare'),
     heading,
     navCatalog: tr(session, 'navCatalog'),
+    iconArrow: iconSvg('arrowUpRight'),
     bodyHtml
   });
 
@@ -392,7 +409,7 @@ function cartPage(req, res, session) {
   const totals = cartTotals(session);
   let cartBodyHtml;
   if (!totals.items.length) {
-    cartBodyHtml = `<div class="empty-state"><span class="state-icon">▱</span><h2>${esc(tr(session, 'cartEmpty'))}</h2><p>${esc(tr(session, 'cartHint'))}</p><a class="button button-primary" href="/catalog">${esc(tr(session, 'continueShopping'))}</a></div>`;
+    cartBodyHtml = `<div class="empty-state"><span class="state-icon">${iconSvg('cart')}</span><h2>${esc(tr(session, 'cartEmpty'))}</h2><p>${esc(tr(session, 'cartHint'))}</p><a class="button button-primary" href="/catalog">${esc(tr(session, 'continueShopping'))}</a></div>`;
   } else {
     const unitWord = session.lang === 'en' ? 'item' : session.lang === 'ru' ? 'шт.' : 'dona';
     const rows = totals.items.map(({ product, qty }) => renderTemplate('partials/cart-line', {
@@ -410,14 +427,18 @@ function cartPage(req, res, session) {
       maxQty: String(Math.min(99, product.stock)),
       qty: String(qty),
       updateLabel: tr(session, 'updateStatus'),
-      removeLabel: tr(session, 'remove')
+      removeLabel: tr(session, 'remove'),
+      iconMinus: iconSvg('minus'),
+      iconPlus: iconSvg('plus'),
+      iconRefresh: iconSvg('refresh'),
+      iconTrash: iconSvg('trash')
     })).join('');
 
     cartBodyHtml = `<div class="cart-layout">
       <div class="cart-items">
         ${rows}
         <div class="cart-footer-actions">
-          <a class="text-link" href="/catalog">← ${esc(tr(session, 'continueShopping'))}</a>
+          <a class="text-link" href="/catalog">${iconSvg('arrowLeft')} ${esc(tr(session, 'continueShopping'))}</a>
           <form method="post" action="/cart/clear" data-confirm="${esc(tr(session, 'confirmClearCart'))}">
             ${csrfField(session)}
             <button class="filter-reset danger-link" type="submit">${esc(tr(session, 'clearCart'))}</button>
@@ -426,7 +447,7 @@ function cartPage(req, res, session) {
       </div>
       <div id="cart-summary-wrap">
         ${orderSummary(session, totals)}
-        <a class="button button-primary checkout-button" href="/checkout">${esc(tr(session, 'checkout'))} <span aria-hidden="true">↗</span></a>
+        <a class="button button-primary checkout-button" href="/checkout">${esc(tr(session, 'checkout'))} ${iconSvg('arrowUpRight')}</a>
       </div>
     </div>`;
   }
@@ -475,6 +496,7 @@ function checkoutPage(req, res, session, { values = {}, fieldErrors = {}, formEr
     checkoutTerms: tr(session, 'checkoutTerms'),
     requiredFields: tr(session, 'requiredFields'),
     placeOrderLabel: tr(session, 'placeOrder'),
+    iconArrow: iconSvg('arrowUpRight'),
     orderSummaryHtml: orderSummary(session, totals)
   });
 
@@ -501,6 +523,7 @@ function renderBuilder(req, res, session, selectedIds = null) {
           id: p.id,
           category: p.category,
           name: localized(p, 'name', session),
+          imageUrl: productImageUrl(p),
           price: p.price,
           priceFormatted: formatPrice(p.price, session.lang),
           socket: extractSocket(p),
@@ -526,14 +549,22 @@ function renderBuilder(req, res, session, selectedIds = null) {
     .map(([field]) => `<input type="hidden" name="${esc(field)}" value="${esc(evaluation.choices[field] || '')}" data-builder-hidden="${esc(field)}">`)
     .join('');
 
+  const markIcon = evaluation.compatible ? iconSvg('check') : iconSvg('alert');
   const rowsHtml = BUILD_FIELDS
-    .map(([field]) => `<li data-builder-row="${esc(field)}"><span>${esc(picks[field] ? localized(picks[field], 'name', session) : '—')}</span><b>${evaluation.compatible ? '✓' : '!'}</b></li>`)
+    .map(([field]) => `<li data-builder-row="${esc(field)}"><span>${esc(picks[field] ? localized(picks[field], 'name', session) : '—')}</span><b class="${evaluation.compatible ? 'is-ok' : 'is-bad'}">${markIcon}</b></li>`)
     .join('');
 
   const statusBad = !evaluation.compatible;
   const statusWarn = evaluation.compatible && !evaluation.psuOk;
   const powerPct = evaluation.psuWatts > 0 ? Math.min(100, Math.round((evaluation.estimatedWatts / evaluation.psuWatts) * 100)) : 50;
-  const previewPc = productById('pc-aurora-7800') || store.products[0];
+  const previewItem = picks.case || picks.gpu || productById('pc-r7-7800x3d-4070s') || store.products[0];
+  const previewStripHtml = ['cpu', 'gpu', 'board', 'case']
+    .map(field => {
+      const item = picks[field];
+      if (!item) return '';
+      return `<div class="builder-thumb" data-builder-thumb="${esc(field)}"><img src="${productImageUrl(item)}" alt="${esc(localized(item, 'name', session))}" width="160" height="120" loading="lazy"><span>${esc(field.toUpperCase())}</span></div>`;
+    })
+    .join('');
 
   const content = renderTemplate('builder', {
     navBuilder: tr(session, 'navBuilder'),
@@ -541,6 +572,8 @@ function renderBuilder(req, res, session, selectedIds = null) {
     builderText: tr(session, 'builderText'),
     partsCatalogJson: JSON.stringify(partsCatalog),
     lang: session.lang,
+    iconCpu: iconSvg('processors'),
+    iconArrow: iconSvg('arrowUpRight'),
     socket: evaluation.socket,
     ddr: evaluation.ddr,
     statusClass: statusBad ? 'is-error' : statusWarn ? 'is-warn' : '',
@@ -552,7 +585,9 @@ function renderBuilder(req, res, session, selectedIds = null) {
     controlsHtml,
     builderNote: tr(session, 'builderNote'),
     builderEstimate: tr(session, 'builderEstimate'),
-    previewImageHtml: previewPc ? productImage(previewPc, session, { hero: true, lazy: false }) : '',
+    previewImageHtml: previewItem ? productImage(previewItem, session, { hero: false, lazy: false }) : '',
+    previewCaseName: previewItem ? localized(previewItem, 'name', session) : '',
+    previewStripHtml,
     totalLabel: tr(session, 'total'),
     totalFormatted: formatPrice(evaluation.total, session.lang),
     componentsSummary: `${BUILD_FIELDS.length} ${session.lang === 'ru' ? 'компонентов' : session.lang === 'en' ? 'components' : 'ta komponent'}`,
@@ -598,6 +633,8 @@ function successPage(req, res, session, url) {
     .join('');
 
   const content = renderTemplate('success', {
+    iconCheck: iconSvg('check'),
+    iconArrow: iconSvg('arrowUpRight'),
     orderSuccessTitle: tr(session, 'orderSuccessTitle'),
     orderSuccessText: tr(session, 'orderSuccessText'),
     orderNumberLabel: tr(session, 'orderNumber'),

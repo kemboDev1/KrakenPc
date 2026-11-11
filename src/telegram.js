@@ -1,5 +1,7 @@
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
-const { formatPrice, tashkentDayStart } = u(require('./config'));
+const { ROOT, formatPrice, tashkentDayStart } = u(require('./config'));
 const { getStore, productById, saveStore } = u(require('./storage'));
 const { pngBuffer } = u(require('./artwork'));
 
@@ -29,12 +31,23 @@ async function sendOrderReport(order) {
   try {
     for (const item of order.items) {
       const imageProduct = productById(item.id) || { id: item.id, name: { uz: item.name }, image: 'tower' };
-      const bytes = pngBuffer(imageProduct);
+      let bytes;
+      let mime = 'image/jpeg';
+      let ext = 'jpg';
+      const safeId = String(imageProduct.id || '').replace(/[^a-z0-9-]/gi, '');
+      try {
+        if (!safeId) throw new Error('missing id');
+        bytes = await fs.readFile(path.join(ROOT, 'public', 'images', `${safeId}.jpg`));
+      } catch {
+        bytes = pngBuffer(imageProduct);
+        mime = 'image/png';
+        ext = 'png';
+      }
       const form = new FormData();
       form.append('chat_id', chatId);
       const caption = `${order.id} · ${item.name}\n${formatPrice(item.price, 'uz')} × ${item.qty}\n\n${(item.specs || []).join(' · ')}`.slice(0, 990);
       form.append('caption', caption);
-      form.append('photo', new Blob([bytes], { type: 'image/png' }), `${item.id}.png`);
+      form.append('photo', new Blob([bytes], { type: mime }), `${item.id}.${ext}`);
       const response = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`, {
         method: 'POST', body: form, signal: AbortSignal.timeout(15000)
       });

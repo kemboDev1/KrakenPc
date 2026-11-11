@@ -7,8 +7,8 @@ const zlib = require('node:zlib');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   ROOT, ON_VERCEL, PORT, HOST, PUBLIC_ORIGIN, PROD,
-  SESSION_KEY, STATUSES, BUILD_FIELDS,
-  esc, localized, formatPrice, localizedRoute, localPath
+  SESSION_KEY, STATUSES, BUILD_FIELDS, LEGACY_SLUG_REDIRECTS,
+  esc, localized, formatPrice, requestOrigin, localizedRoute, localPath
 } = u(require('./src/config'));
 const { tr } = u(require('./src/i18n'));
 const {
@@ -18,7 +18,7 @@ const {
 const { productArtworkSvg, faviconPngBuffer, faviconIcoBuffer } = u(require('./src/artwork'));
 const { sendOrderReport, sendStatusReport, startBotPolling, stopBotPolling } = u(require('./src/telegram'));
 const { evaluateBuild } = u(require('./src/builder'));
-const { cartTotals } = u(require('./src/views/layout'));
+const { cartTotals, productImageUrl } = u(require('./src/views/layout'));
 const {
   homePage, catalogPage, productPage, simpleListPage,
   cartPage, checkoutPage, renderBuilder, successPage, pageNotFound, forbiddenPage
@@ -265,6 +265,23 @@ function handleStaticGet(req, res, pathname, url) {
     return outputBody(res, faviconIcoBuffer());
   }
 
+  const imgMatch = pathname.match(/^\/images\/([a-z0-9-]+)\.(jpg|jpeg|webp|png)$/);
+  if (imgMatch) {
+    const mime = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      webp: 'image/webp',
+      png: 'image/png'
+    }[imgMatch[2]];
+    const imagesDir = path.join(ROOT, 'public', 'images');
+    const resolved = path.resolve(imagesDir, `${imgMatch[1]}.${imgMatch[2]}`);
+    if (!resolved.startsWith(imagesDir + path.sep)) {
+      res.statusCode = 403;
+      return res.end('Forbidden');
+    }
+    return sendAsset(res, resolved, mime, 604800);
+  }
+
   const artMatch = pathname.match(/^\/art\/([a-z0-9-]+)\.svg$/);
   if (artMatch) {
     const product = productById(artMatch[1]);
@@ -292,14 +309,15 @@ function handleStaticGet(req, res, pathname, url) {
   }
 
   if (pathname === '/robots.txt') {
-    const txt = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /cart\nDisallow: /checkout\nDisallow: /favorites\nDisallow: /compare\nDisallow: /success\n${PUBLIC_ORIGIN ? `Sitemap: ${PUBLIC_ORIGIN}/sitemap.xml\n` : ''}`;
+    const origin = requestOrigin(req);
+    const txt = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /cart\nDisallow: /checkout\nDisallow: /favorites\nDisallow: /compare\nDisallow: /success\n${origin ? `Sitemap: ${origin}/sitemap.xml\n` : ''}`;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     return outputBody(res, Buffer.from(txt));
   }
 
   if (pathname === '/sitemap.xml') {
-    const origin = PUBLIC_ORIGIN || `http://localhost:${PORT}`;
+    const origin = requestOrigin(req) || `http://localhost:${PORT}`;
     const baseRoutes = ['/', '/catalog', '/builder', ...store.products.map(p => `/product/${encodeURIComponent(p.slug)}`)];
     const routes = baseRoutes.flatMap(route => [route, localizedRoute(route, 'ru'), localizedRoute(route, 'en')]);
     const today = new Date().toISOString().slice(0, 10);
@@ -330,6 +348,7 @@ function handleStaticGet(req, res, pathname, url) {
         category: p.category,
         categoryLabel: tr({ lang }, p.category),
         name: localized(p, 'name', { lang }),
+        imageUrl: productImageUrl(p),
         price: p.price,
         priceFormatted: formatPrice(p.price, lang),
         stock: p.stock
@@ -393,7 +412,15 @@ async function handleGet(req, res, session, pathname, url) {
   if (pathname === '/checkout') return checkoutPage(req, res, session);
   if (pathname === '/success') return successPage(req, res, session, url);
   if (pathname === '/admin') return adminPage(req, res, session, url);
-  if (pathname.startsWith('/product/')) return productPage(req, res, session, productBySlug(pathname.slice('/product/'.length)));
+  if (pathname.startsWith('/product/')) {
+    const slug = pathname.slice('/product/'.length);
+    if (LEGACY_SLUG_REDIRECTS[slug]) {
+      res.statusCode = 301;
+      res.setHeader('Location', `/product/${encodeURIComponent(LEGACY_SLUG_REDIRECTS[slug])}${url.search}`);
+      return res.end();
+    }
+    return productPage(req, res, session, productBySlug(slug));
+  }
   return pageNotFound(req, res, session);
 }
 
@@ -826,6 +853,9 @@ async function handleRequest(req, res) {
     if (res.headersSent) {
       if (!res.writableEnded) res.end();
       return;
+    }
+    if (pathname.startsWith('/api/')) {
+      return sendJson(res, { ok: false, error: tr(session, 'errorGeneric') }, 500);
     }
     return forbiddenPage(req, res, session, tr(session, 'errorGeneric'));
   }

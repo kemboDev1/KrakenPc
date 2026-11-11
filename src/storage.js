@@ -5,11 +5,12 @@ const path = require('node:path');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   ON_VERCEL, DATA_DIR, STORE_FILE, CATALOG_FILE, PROD, SESSION_KEY,
-  readLegacyLocalKey
+  LEGACY_PRODUCT_IDS, readLegacyLocalKey
 } = u(require('./config'));
 
 let store = null;
 let writeQueue = Promise.resolve();
+let writeSeq = 0;
 
 function deriveStoreKey(secret) {
   return crypto.createHash('sha256').update('krakenpc-store-v1:' + secret).digest();
@@ -72,6 +73,37 @@ function syncCatalogProducts(catalogList) {
   return changed;
 }
 
+function migrateLegacySessionIds() {
+  let changed = false;
+  for (const sess of Object.values(store.sessions || {})) {
+    if (sess.cart && typeof sess.cart === 'object') {
+      for (const [oldId, newId] of Object.entries(LEGACY_PRODUCT_IDS)) {
+        if (sess.cart[oldId]) {
+          sess.cart[newId] = Math.min(99, Number(sess.cart[newId] || 0) + Number(sess.cart[oldId] || 0));
+          delete sess.cart[oldId];
+          changed = true;
+        }
+      }
+    }
+    for (const field of ['favorites', 'compare']) {
+      if (Array.isArray(sess[field])) {
+        const mapped = [];
+        let listChanged = false;
+        for (const id of sess[field]) {
+          const nextId = LEGACY_PRODUCT_IDS[id] || id;
+          if (nextId !== id) listChanged = true;
+          if (!mapped.includes(nextId)) mapped.push(nextId);
+        }
+        if (listChanged) {
+          sess[field] = mapped;
+          changed = true;
+        }
+      }
+    }
+  }
+  return changed;
+}
+
 function pruneStaleGuestSessions() {
   const maxAge = 14 * 24 * 60 * 60 * 1000;
   const cutoff = Date.now() - maxAge;
@@ -89,14 +121,36 @@ function pruneStaleGuestSessions() {
   return removed > 0;
 }
 
+async function renameWithRetry(src, dest) {
+  let delay = 12;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await fs.rename(src, dest);
+      return;
+    } catch (error) {
+      if ((error.code !== 'EPERM' && error.code !== 'EBUSY' && error.code !== 'EACCES') || attempt === 4) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2;
+    }
+  }
+}
+
 async function saveStore() {
   const payload = encryptStorePayload(store, SESSION_KEY);
-  writeQueue = writeQueue.then(async () => {
-    const temp = `${STORE_FILE}.${process.pid}.${Date.now()}.tmp`;
-    await fs.writeFile(temp, payload, { mode: 0o600 });
-    await fs.rename(temp, STORE_FILE);
+  const nextWrite = writeQueue.catch(() => {}).then(async () => {
+    const temp = `${STORE_FILE}.${process.pid}.${++writeSeq}.tmp`;
+    try {
+      await fs.writeFile(temp, payload, { mode: 0o600 });
+      await renameWithRetry(temp, STORE_FILE);
+    } catch (error) {
+      await fs.unlink(temp).catch(() => {});
+      throw error;
+    }
   });
-  return writeQueue;
+  writeQueue = nextWrite;
+  return nextWrite;
 }
 
 async function initStore() {
@@ -141,8 +195,9 @@ async function initStore() {
   }
 
   const catalogUpdated = syncCatalogProducts(catalogSeed);
+  const migratedSessions = migrateLegacySessionIds();
   const pruned = pruneStaleGuestSessions();
-  if (migratedKey || catalogUpdated || pruned) {
+  if (migratedKey || catalogUpdated || migratedSessions || pruned) {
     await saveStore();
   }
 }

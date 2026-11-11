@@ -12,9 +12,13 @@
       </select>
       <label class="sr-only" for="theme">{{themeLabel}}</label>
       <select id="theme" name="theme" aria-label="{{themeLabel}}">
-        <option value="dark" {{selDark}}>◐ {{themeDark}}</option>
-        <option value="light" {{selLight}}>☼ {{themeLight}}</option>
+        <option value="dark" {{selDark}}>{{themeDark}}</option>
+        <option value="light" {{selLight}}>{{themeLight}}</option>
       </select>
+      <button type="button" class="theme-toggle-btn" data-theme-toggle aria-label="{{themeToggleLabel}}" title="{{themeToggleLabel}}">
+        <span class="theme-icon-sun">{{{iconSun}}}</span>
+        <span class="theme-icon-moon">{{{iconMoon}}}</span>
+      </button>
       <input type="hidden" name="back" value="{{backPath}}">
       <button type="submit" class="quiet-submit">{{apply}}</button>
     </form>
@@ -30,10 +34,7 @@
       <span>KRAKEN<span class="brand-accent">PC</span><small>PERFORMANCE, BUILT RIGHT</small></span>
     </a>
     <form class="search-form" action="/catalog" method="get" role="search">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="10.8" cy="10.8" r="6.5"/>
-        <path d="m16 16 5 5"/>
-      </svg>
+      {{{iconSearch}}}
       <input type="search" name="q" placeholder="{{searchPlaceholder}}" aria-label="{{searchPlaceholder}}" maxlength="80">
       <input type="hidden" name="lang" value="{{lang}}">
       <button type="button" class="search-kbd" data-open-palette aria-label="{{paletteTitle}}" title="{{shortcutTip}}">Ctrl K</button>
@@ -48,17 +49,18 @@
         <span class="tool-icon">{{{iconHeart}}}</span>
         <span>{{navFavorites}} <b data-fav-count>{{favCountDisplay}}</b></span>
       </a>
-      <a class="cart-tool" href="{{cartUrl}}">
+      <a class="cart-tool" href="{{cartUrl}}" aria-label="{{navCart}}">
         <span class="tool-icon">{{{iconCart}}}</span>
-        <span>{{navCart}} <b class="cart-count" data-cart-count>{{cartCount}}</b></span>
+        <span class="cart-label">{{navCart}}</span>
+        <b class="cart-count" data-cart-count>{{cartCount}}</b>
       </a>
     </div>
   </div>
   <nav class="main-nav" aria-label="{{navLabel}}">
     <div class="container nav-inner">
-      <a class="nav-home {{homeActiveClass}}" href="{{homeUrl}}">⌂ <span>{{navHome}}</span></a>
+      <a class="nav-home {{homeActiveClass}}" href="{{homeUrl}}">{{{iconHome}}} <span>{{navHome}}</span></a>
       {{{navLinksHtml}}}
-      <a class="nav-compare-mobile" href="{{compareUrl}}">⇄ {{navCompare}} <b data-compare-count>{{compareCountDisplay}}</b></a>
+      <a class="nav-compare-mobile" href="{{compareUrl}}">{{{iconCompare}}} <span>{{navCompare}}</span> <b data-compare-count>{{compareCountDisplay}}</b></a>
     </div>
   </nav>
 </header>
