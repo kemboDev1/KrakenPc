@@ -137,19 +137,23 @@ async function readBody(req) {
   throw Object.assign(new Error('Unsupported media type'), { statusCode: 415 });
 }
 
+function sendBytesAsset(res, bytes, contentType, maxAge = 300) {
+  const etag = `"${crypto.createHash('sha1').update(bytes).digest('hex')}"`;
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Cache-Control', `public, max-age=${maxAge}, stale-while-revalidate=86400`);
+  res.setHeader('ETag', etag);
+  if (res.req.headers['if-none-match'] === etag) {
+    res.statusCode = 304;
+    return res.end();
+  }
+  res.statusCode = 200;
+  outputBody(res, bytes);
+}
+
 async function sendAsset(res, file, contentType, maxAge = 300) {
   try {
     const bytes = await fs.readFile(file);
-    const etag = `"${crypto.createHash('sha1').update(bytes).digest('hex')}"`;
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', `public, max-age=${maxAge}, stale-while-revalidate=86400`);
-    res.setHeader('ETag', etag);
-    if (res.req.headers['if-none-match'] === etag) {
-      res.statusCode = 304;
-      return res.end();
-    }
-    res.statusCode = 200;
-    outputBody(res, bytes);
+    sendBytesAsset(res, bytes, contentType, maxAge);
   } catch {
     res.statusCode = 404;
     res.end('Not found');
@@ -258,14 +262,10 @@ function handleStaticGet(req, res, pathname, url) {
     return sendAsset(res, path.join(ROOT, 'public', 'apple-touch-icon.png'), 'image/png', 604800);
   }
   if (pathname === '/favicon.png') {
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=604800');
-    return outputBody(res, faviconPngBuffer());
+    return sendBytesAsset(res, faviconPngBuffer(), 'image/png', 604800);
   }
   if (pathname === '/favicon.ico') {
-    res.setHeader('Content-Type', 'image/x-icon');
-    res.setHeader('Cache-Control', 'public, max-age=604800');
-    return outputBody(res, faviconIcoBuffer());
+    return sendBytesAsset(res, faviconIcoBuffer(), 'image/x-icon', 604800);
   }
 
   const imgMatch = pathname.match(/^\/images\/([a-z0-9-]+)\.(jpg|jpeg|webp|png)$/);

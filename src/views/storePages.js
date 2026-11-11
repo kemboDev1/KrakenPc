@@ -99,7 +99,8 @@ function homePage(req, res, session) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'KrakenPC',
-    url: siteUrl
+    url: siteUrl,
+    ...(origin ? { logo: `${origin}/favicon.png` } : {})
   };
 
   const warrantySummary = `12 ${session.lang === 'en' ? 'month' : session.lang === 'ru' ? 'мес.' : 'oy'} · ${session.lang === 'en' ? 'service cover' : session.lang === 'ru' ? 'сервиса' : 'servis kafolati'}`;

@@ -280,6 +280,8 @@ test('SSR pages render clean HTML from views/, structured JSON-LD, and compare a
   assert.ok(client.csrf.length > 10, 'Expected CSRF token rendered in page');
   assert.ok(home.body.includes('"@type":"WebSite"'), 'Expected WebSite schema JSON-LD');
   assert.ok(home.body.includes('"@type":"Organization"'), 'Expected Organization schema JSON-LD');
+  assert.ok(home.body.includes('class="brand-mark" src="/favicon.png"'), 'Expected Kraken emblem brand mark in header and footer');
+  assert.ok(!home.body.includes('m25 9-12 17'), 'Legacy hexagon placeholder SVG should not remain');
   assert.ok(!home.body.includes('Kraken Aurora'), 'Home should use real hardware product names');
   assert.ok(!/\{\{\{?[a-zA-Z0-9_.]+\}?\}\}/.test(home.body), 'No unreplaced template tokens should remain on home page');
 
