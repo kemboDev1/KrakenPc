@@ -1,7 +1,9 @@
 const crypto = require('node:crypto');
+const fsSync = require('node:fs');
+const path = require('node:path');
 const zlib = require('node:zlib');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
-const { esc, localized } = u(require('./config'));
+const { esc, localized, ROOT } = u(require('./config'));
 
 const svgCache = new Map();
 
@@ -102,8 +104,23 @@ function encodePng(width, height, pixels) {
 }
 
 let cachedFaviconPng = null;
+let cachedFaviconIco = null;
+
+function readPublicAsset(name) {
+  try {
+    return fsSync.readFileSync(path.join(ROOT, 'public', name));
+  } catch {
+    return null;
+  }
+}
+
 function faviconPngBuffer() {
   if (cachedFaviconPng) return cachedFaviconPng;
+  const fromDisk = readPublicAsset('favicon.png');
+  if (fromDisk && fromDisk.length > 0) {
+    cachedFaviconPng = fromDisk;
+    return cachedFaviconPng;
+  }
   const size = 32;
   const pixels = Buffer.alloc(size * size * 4);
   const paint = (x, y, c) => {
@@ -129,6 +146,12 @@ function faviconPngBuffer() {
 }
 
 function faviconIcoBuffer() {
+  if (cachedFaviconIco) return cachedFaviconIco;
+  const fromDisk = readPublicAsset('favicon.ico');
+  if (fromDisk && fromDisk.length > 0) {
+    cachedFaviconIco = fromDisk;
+    return cachedFaviconIco;
+  }
   const png = faviconPngBuffer();
   const header = Buffer.alloc(22);
   header.writeUInt16LE(0, 0);
@@ -142,7 +165,8 @@ function faviconIcoBuffer() {
   header.writeUInt16LE(32, 12);
   header.writeUInt32LE(png.length, 14);
   header.writeUInt32LE(22, 18);
-  return Buffer.concat([header, png]);
+  cachedFaviconIco = Buffer.concat([header, png]);
+  return cachedFaviconIco;
 }
 
 module.exports = { productArtworkSvg, pngBuffer, faviconPngBuffer, faviconIcoBuffer };

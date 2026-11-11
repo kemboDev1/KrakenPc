@@ -227,6 +227,8 @@ test('static assets, SEO files, zero-cookie static requests, and legacy .html 30
     ['/robots.txt', 'text/plain'],
     ['/sitemap.xml', 'application/xml'],
     ['/favicon.svg', 'image/svg+xml'],
+    ['/favicon-32x32.png', 'image/png'],
+    ['/apple-touch-icon.png', 'image/png'],
     ['/favicon.png', 'image/png'],
     ['/favicon.ico', 'image/x-icon'],
     ['/art/pc-r7-7800x3d-4070s.svg', 'image/svg+xml'],
@@ -236,13 +238,17 @@ test('static assets, SEO files, zero-cookie static requests, and legacy .html 30
     assert.equal(res.status, 200, `Expected 200 for ${route}`);
     assert.ok(res.headers.get('content-type')?.includes(type), `Expected ${type} for ${route}`);
     assert.equal(res.headers.getSetCookie().length, 0, `Static route ${route} should not set session cookie`);
-    if (route === '/favicon.png') {
+    if (route === '/favicon.png' || route === '/favicon-32x32.png' || route === '/apple-touch-icon.png') {
       const buf = Buffer.from(await res.arrayBuffer());
       assert.deepEqual(buf.subarray(0, 4), Buffer.from([137, 80, 78, 71]));
     }
     if (route === '/favicon.ico') {
       const buf = Buffer.from(await res.arrayBuffer());
       assert.deepEqual(buf.subarray(0, 4), Buffer.from([0, 0, 1, 0]));
+    }
+    if (route === '/favicon.svg') {
+      const svgText = await res.text();
+      assert.ok(svgText.includes('<svg') && svgText.length > 1000, 'Expected brand mascot SVG favicon');
     }
   }
 

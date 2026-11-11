@@ -249,10 +249,13 @@ function handleStaticGet(req, res, pathname, url) {
     return sendAsset(res, path.join(ROOT, 'public', 'app.js'), 'application/javascript; charset=utf-8', 600);
   }
   if (pathname === '/favicon.svg') {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44"><path d="M22 3 38 12v20L22 41 6 32V12z" fill="#10191f" stroke="#48d3df" stroke-width="2"/><path d="m25 9-12 17h9l-3 9 13-18h-9z" fill="#48d3df"/></svg>`;
-    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=604800');
-    return outputBody(res, Buffer.from(svg));
+    return sendAsset(res, path.join(ROOT, 'public', 'favicon.svg'), 'image/svg+xml; charset=utf-8', 604800);
+  }
+  if (pathname === '/favicon-32x32.png') {
+    return sendAsset(res, path.join(ROOT, 'public', 'favicon-32x32.png'), 'image/png', 604800);
+  }
+  if (pathname === '/apple-touch-icon.png' || pathname === '/apple-touch-icon-precomposed.png') {
+    return sendAsset(res, path.join(ROOT, 'public', 'apple-touch-icon.png'), 'image/png', 604800);
   }
   if (pathname === '/favicon.png') {
     res.setHeader('Content-Type', 'image/png');
