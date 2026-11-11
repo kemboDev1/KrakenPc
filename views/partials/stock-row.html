@@ -1,0 +1,14 @@
+<form class="stock-row {{lowClass}}" method="post" action="/admin/stock">
+  {{{csrfField}}}
+  <input type="hidden" name="id" value="{{id}}">
+  <div class="stock-row-name">
+    <a href="{{productHref}}">{{name}}</a>
+    <small>{{brand}} · {{priceFormatted}}</small>
+  </div>
+  <div class="stock-row-control">
+    <label class="sr-only" for="stock-{{id}}">{{stockLabel}}</label>
+    <input class="control" id="stock-{{id}}" name="stock" type="number" min="0" max="999" value="{{stock}}" inputmode="numeric">
+    <button class="button button-secondary" type="submit">{{saveLabel}}</button>
+  </div>
+</form>
+

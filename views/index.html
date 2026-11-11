@@ -1,0 +1,109 @@
+<section class="hero container">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="eyebrow-rule"></span>{{heroEyebrow}}</p>
+    <h1>{{{heroTitleHtml}}}</h1>
+    <p class="hero-lede">{{heroBody}}</p>
+    <div class="hero-actions">
+      <a href="/catalog?type=pc" class="button button-primary">{{heroPrimary}} <span aria-hidden="true">↗</span></a>
+      <a href="/builder" class="button button-quiet">{{heroSecondary}} <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="hero-proof">
+      <div class="proof-avatars"><span>K</span><span>PC</span><span>✓</span></div>
+      <span>{{heroFeature}}</span>
+      <span class="proof-divider"></span>
+      <span>{{warrantySummary}}</span>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-grid-glow"></div>
+    <div class="hero-visual-technical"><span>BUILD 001</span><span>1440P READY</span></div>
+    <div class="hero-product">{{{heroImageHtml}}}</div>
+    <div class="hero-image-caption">
+      <span class="hero-caption-dot"></span>
+      <div>
+        <strong>{{heroBadge}}</strong>
+        <small>{{heroBadgelabel}}</small>
+      </div>
+      <span class="hero-caption-price">{{heroPriceFormatted}}</span>
+    </div>
+    <span class="hero-outline hero-outline-one"></span>
+    <span class="hero-outline hero-outline-two"></span>
+  </div>
+</section>
+
+<section class="benefits container" aria-label="KrakenPC {{storeLabel}}">
+  <article>
+    <span class="benefit-symbol">⌘</span>
+    <div>
+      <h2>{{benefitBuild}}</h2>
+      <p>{{benefitBuildText}}</p>
+    </div>
+  </article>
+  <article>
+    <span class="benefit-symbol">◇</span>
+    <div>
+      <h2>{{benefitWarranty}}</h2>
+      <p>{{benefitWarrantyText}}</p>
+    </div>
+  </article>
+  <article>
+    <span class="benefit-symbol">⌁</span>
+    <div>
+      <h2>{{benefitDelivery}}</h2>
+      <p>{{benefitDeliveryText}}</p>
+    </div>
+  </article>
+</section>
+
+<section class="section container">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionPicks}}</p>
+      <h2>{{pcsLabel}}</h2>
+      <p class="section-intro">{{picksText}}</p>
+    </div>
+    <a class="text-link" href="/catalog?type=pc">{{allPcs}} <span aria-hidden="true">↗</span></a>
+  </div>
+  {{{buildsGridHtml}}}
+</section>
+
+<section class="section container section-popular">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionPopular}}</p>
+      <h2>{{partsLabel}}</h2>
+      <p class="section-intro">{{popularText}}</p>
+    </div>
+    <a class="text-link" href="/catalog?type=part">{{allParts}} <span aria-hidden="true">↗</span></a>
+  </div>
+  {{{popularGridHtml}}}
+</section>
+
+<section class="section container">
+  <div class="build-banner">
+    <div class="build-banner-visual">
+      <div class="build-ring ring-a"></div>
+      <div class="build-ring ring-b"></div>
+      <div class="build-chip">K<br><small>PC</small></div>
+      <div class="build-connector connector-a"></div>
+      <div class="build-connector connector-b"></div>
+    </div>
+    <div class="build-banner-copy">
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionService}}</p>
+      <h2>{{serviceTitle}}</h2>
+      <p>{{serviceText}}</p>
+      <a href="/builder" class="button button-primary">{{serviceButton}} <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="section container category-shortcuts">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{navCatalog}}</p>
+      <h2>{{allParts}}</h2>
+    </div>
+  </div>
+  <div class="category-row">{{{categoryLinksHtml}}}</div>
+</section>
+

@@ -1,0 +1,32 @@
+<div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+<div class="modal-backdrop" id="palette-modal" role="dialog" aria-modal="true" aria-labelledby="palette-title" hidden>
+  <div class="modal-card palette-card">
+    <div class="modal-head">
+      <strong id="palette-title">{{paletteTitle}}</strong>
+      <button type="button" class="modal-close" data-close-modal aria-label="{{cancel}}">×</button>
+    </div>
+    <div class="palette-input-wrap">
+      {{{iconSearch}}}
+      <input id="palette-input" type="search" autocomplete="off" maxlength="80" placeholder="{{palettePlaceholder}}">
+    </div>
+    <div class="palette-results" id="palette-results">
+      <p class="palette-hint">{{shortcutTip}}</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" hidden>
+  <div class="modal-card confirm-card">
+    <div class="modal-head">
+      <strong id="confirm-title">{{confirmTitle}}</strong>
+      <button type="button" class="modal-close" data-close-modal aria-label="{{cancel}}">×</button>
+    </div>
+    <p class="confirm-message" id="confirm-message"></p>
+    <div class="confirm-actions">
+      <button type="button" class="button button-secondary" data-close-modal>{{cancel}}</button>
+      <button type="button" class="button button-primary" id="confirm-accept">{{confirm}}</button>
+    </div>
+  </div>
+</div>
+

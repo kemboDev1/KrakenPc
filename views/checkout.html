@@ -1,0 +1,36 @@
+<section class="page-intro container">
+  <div>
+    <p class="eyebrow"><span class="eyebrow-rule"></span>{{navCart}}</p>
+    <h1>{{checkoutTitle}}</h1>
+    <p>{{checkoutInfo}}</p>
+  </div>
+</section>
+
+<section class="container checkout-layout">
+  <form class="checkout-form" method="post" action="/checkout" data-checkout-form novalidate>
+    {{{csrfField}}}
+    {{{formAlertHtml}}}
+
+    <label class="field-label" for="name">{{fullNameLabel}} *</label>
+    <input class="control {{nameInvalidClass}}" required id="name" name="name" autocomplete="name" maxlength="80" minlength="2" value="{{nameValue}}" {{{nameAriaInvalid}}}>
+    {{{nameErrorHtml}}}
+
+    <label class="field-label" for="phone">{{phoneLabel}} *</label>
+    <input class="control {{phoneInvalidClass}}" required id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" minlength="8" maxlength="24" placeholder="+998 90 123 45 67" value="{{phoneValue}}" {{{phoneAriaInvalid}}}>
+    {{{phoneErrorHtml}}}
+
+    <label class="field-label" for="address">{{addressLabel}} *</label>
+    <textarea class="control {{addressInvalidClass}}" required id="address" name="address" maxlength="240" minlength="6" rows="3" autocomplete="street-address" {{{addressAriaInvalid}}}>{{addressValue}}</textarea>
+    {{{addressErrorHtml}}}
+
+    <label class="field-label" for="note">{{noteLabel}}</label>
+    <textarea class="control" id="note" name="note" maxlength="240" rows="2">{{noteValue}}</textarea>
+
+    <p class="form-help">{{checkoutTerms}}</p>
+    <p class="form-help">{{requiredFields}}</p>
+    <button class="button button-primary checkout-submit" type="submit">{{placeOrderLabel}} <span aria-hidden="true">↗</span></button>
+  </form>
+
+  {{{orderSummaryHtml}}}
+</section>
+

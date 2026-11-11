@@ -1,0 +1,20 @@
+<section class="container success-wrap">
+  <div class="success-check">✓</div>
+  <p class="eyebrow"><span class="eyebrow-rule"></span>KrakenPC</p>
+  <h1>{{orderSuccessTitle}}</h1>
+  <p class="success-intro">{{orderSuccessText}}</p>
+  <div class="success-order">
+    <div class="success-id">
+      <span>{{orderNumberLabel}}</span>
+      <strong>{{orderId}}</strong>
+    </div>
+    {{{itemsHtml}}}
+    <div class="success-item success-total">
+      <span>{{totalLabel}}</span>
+      <strong>{{totalFormatted}}</strong>
+    </div>
+  </div>
+  <p class="form-help">{{telegramState}}</p>
+  <a class="button button-primary" href="/">{{returnHomeLabel}} ↗</a>
+</section>
+

@@ -1,0 +1,49 @@
+<section class="page-intro container">
+  <div>
+    <p class="eyebrow"><span class="eyebrow-rule"></span>KrakenPC</p>
+    <h1>{{adminTitle}}</h1>
+    <p>{{totalOrdersCount}} {{orderItemsLabel}}</p>
+  </div>
+  <form method="post" action="/admin/logout">
+    {{{csrfField}}}
+    <button class="button button-secondary" type="submit">{{adminLogoutLabel}}</button>
+  </form>
+</section>
+
+<section class="container admin-kpis">
+  <article class="kpi-card"><span>{{kpiOrdersLabel}}</span><strong>{{totalOrdersCount}}</strong></article>
+  <article class="kpi-card"><span>{{kpiTodayLabel}}</span><strong>{{todayCount}}</strong></article>
+  <article class="kpi-card"><span>{{kpiRevenueLabel}}</span><strong>{{revenueFormatted}}</strong></article>
+  <article class="kpi-card"><span>{{kpiPendingLabel}}</span><strong>{{pendingCount}}</strong></article>
+  <article class="kpi-card {{lowStockWarnClass}}"><span>{{kpiLowStockLabel}}</span><strong>{{lowStockCount}}</strong></article>
+</section>
+
+<section class="container admin-toolbar">
+  <form class="admin-filter-form" method="get" action="/admin">
+    <input class="control" type="search" name="q" value="{{searchQuery}}" placeholder="{{adminSearchPlaceholder}}" maxlength="80">
+    <select class="control" name="status" aria-label="{{statusLabel}}">
+      <option value="">{{allLabel}}</option>
+      {{{statusOptionsHtml}}}
+    </select>
+    <button class="button button-primary" type="submit">{{showResultsLabel}}</button>
+  </form>
+  <div class="admin-exports">
+    <a class="button button-secondary" href="/admin/export.csv">{{exportCsvLabel}}</a>
+    <a class="button button-quiet" href="/admin/export.json">{{exportJsonLabel}}</a>
+  </div>
+</section>
+
+<section class="container admin-orders">
+  {{{ordersHtml}}}
+</section>
+
+<section class="container admin-stock-section">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>KrakenPC</p>
+      <h2>{{stockTitle}}</h2>
+    </div>
+  </div>
+  <div class="admin-stock-grid">{{{stockRowsHtml}}}</div>
+</section>
+

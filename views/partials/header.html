@@ -1,0 +1,64 @@
+<a class="skip-link" href="#main-content">{{skipText}}</a>
+<div class="announcement">
+  <div class="container announcement-inner">
+    <span><span class="live-dot"></span>{{region}}</span>
+    <form class="preferences" action="/settings" method="post" data-settings-form>
+      {{{csrfField}}}
+      <label class="sr-only" for="language">{{langLabel}}</label>
+      <select id="language" name="lang" aria-label="{{langLabel}}">
+        <option value="uz" {{selUz}}>UZ</option>
+        <option value="ru" {{selRu}}>RU</option>
+        <option value="en" {{selEn}}>EN</option>
+      </select>
+      <label class="sr-only" for="theme">{{themeLabel}}</label>
+      <select id="theme" name="theme" aria-label="{{themeLabel}}">
+        <option value="dark" {{selDark}}>◐ {{themeDark}}</option>
+        <option value="light" {{selLight}}>☼ {{themeLight}}</option>
+      </select>
+      <input type="hidden" name="back" value="{{backPath}}">
+      <button type="submit" class="quiet-submit">{{apply}}</button>
+    </form>
+  </div>
+</div>
+<header class="site-header">
+  <div class="container header-main">
+    <a href="{{homeUrl}}" class="brand" aria-label="KrakenPC — {{navHome}}">
+      <svg class="brand-mark" viewBox="0 0 44 44" aria-hidden="true">
+        <path d="M22 3 38 12v20L22 41 6 32V12L22 3Z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="m25 9-12 17h9l-3 9 13-18h-9l2-8Z" fill="currentColor"/>
+      </svg>
+      <span>KRAKEN<span class="brand-accent">PC</span><small>PERFORMANCE, BUILT RIGHT</small></span>
+    </a>
+    <form class="search-form" action="/catalog" method="get" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.5"/>
+        <path d="m16 16 5 5"/>
+      </svg>
+      <input type="search" name="q" placeholder="{{searchPlaceholder}}" aria-label="{{searchPlaceholder}}" maxlength="80">
+      <input type="hidden" name="lang" value="{{lang}}">
+      <button type="button" class="search-kbd" data-open-palette aria-label="{{paletteTitle}}" title="{{shortcutTip}}">Ctrl K</button>
+      <button type="submit">{{searchAction}}</button>
+    </form>
+    <div class="header-tools">
+      <a class="header-tool" href="{{compareUrl}}" aria-label="{{navCompare}}">
+        <span class="tool-icon">{{{iconCompare}}}</span>
+        <span>{{navCompare}} <b data-compare-count>{{compareCountDisplay}}</b></span>
+      </a>
+      <a class="header-tool" href="{{favoritesUrl}}" aria-label="{{navFavorites}}">
+        <span class="tool-icon">{{{iconHeart}}}</span>
+        <span>{{navFavorites}} <b data-fav-count>{{favCountDisplay}}</b></span>
+      </a>
+      <a class="cart-tool" href="{{cartUrl}}">
+        <span class="tool-icon">{{{iconCart}}}</span>
+        <span>{{navCart}} <b class="cart-count" data-cart-count>{{cartCount}}</b></span>
+      </a>
+    </div>
+  </div>
+  <nav class="main-nav" aria-label="{{navLabel}}">
+    <div class="container nav-inner">
+      <a class="nav-home {{homeActiveClass}}" href="{{homeUrl}}">⌂ <span>{{navHome}}</span></a>
+      {{{navLinksHtml}}}
+      <a class="nav-compare-mobile" href="{{compareUrl}}">⇄ {{navCompare}} <b data-compare-count>{{compareCountDisplay}}</b></a>
+    </div>
+  </nav>
+</header>

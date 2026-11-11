@@ -1,0 +1,60 @@
+<section class="page-intro container">
+  <div>
+    <p class="eyebrow"><span class="eyebrow-rule"></span>{{navBuilder}}</p>
+    <h1>{{builderTitle}}</h1>
+    <p>{{builderText}}</p>
+  </div>
+</section>
+
+<section class="container builder-layout" data-builder-root data-parts="{{partsCatalogJson}}" data-lang="{{lang}}">
+  <form class="builder-form" method="get" action="/builder">
+    <input type="hidden" name="lang" value="{{lang}}">
+    <div class="builder-form-heading">
+      <span class="builder-chip">K<span>PC</span></span>
+      <div>
+        <h2>{{navBuilder}}</h2>
+        <p data-builder-platform>{{socket}} · {{ddr}} · PCIe 4.0</p>
+      </div>
+      <span class="builder-status {{statusClass}}" data-builder-status>
+        <span class="live-dot"></span>
+        <span data-builder-status-text>{{statusText}}</span>
+      </span>
+    </div>
+    <div class="builder-fields">{{{controlsHtml}}}</div>
+    <p class="form-help">{{builderNote}}</p>
+    <button class="button button-secondary builder-submit" type="submit">{{builderEstimate}}</button>
+  </form>
+
+  <aside class="builder-preview">
+    <div class="builder-preview-visual">{{{previewImageHtml}}}</div>
+    <p class="eyebrow"><span class="eyebrow-rule"></span>{{totalLabel}}</p>
+    <strong data-builder-total>{{totalFormatted}}</strong>
+    <p>{{componentsSummary}} · {{serviceIncluded}}</p>
+    <div class="power-meter" data-power-meter>
+      <div class="power-meter-labels">
+        <span>{{builderPowerLabel}}: <strong data-est-watts>{{estimatedWatts}} W</strong></span>
+        <span>{{builderPsuLabel}}: <strong data-psu-watts>{{psuWattsDisplay}} W</strong></span>
+      </div>
+      <div class="power-bar"><span class="power-bar-fill {{powerWarnClass}}" style="width: {{powerPct}}%"></span></div>
+    </div>
+    <p class="builder-error" role="alert" data-builder-error {{errorHiddenAttr}}>{{builderMismatch}}</p>
+    <p class="builder-error builder-warning" role="status" data-builder-psu-warn {{psuWarnHiddenAttr}}>{{builderPsuWarning}}</p>
+    <ul data-builder-list>{{{rowsHtml}}}</ul>
+    <form method="post" action="/builder/add">
+      {{{csrfField}}}
+      {{{hiddenChoicesHtml}}}
+      <button class="button button-primary builder-submit" type="submit" data-builder-add {{addDisabledAttr}}>{{builderAction}} <span aria-hidden="true">↗</span></button>
+    </form>
+  </aside>
+</section>
+
+<section class="section container builder-ready">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionPicks}}</p>
+      <h2>{{pcsLabel}}</h2>
+    </div>
+  </div>
+  {{{readyPcsGridHtml}}}
+</section>
+

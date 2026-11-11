@@ -1,0 +1,69 @@
+<section class="page-intro container">
+  <div>
+    <p class="eyebrow"><span class="eyebrow-rule"></span>{{navCatalog}}</p>
+    <h1>{{heading}}</h1>
+    <p>{{foundCount}} {{productsFoundLabel}}</p>
+  </div>
+  <a class="breadcrumb" href="/">{{navHome}} <span>›</span> {{navCatalog}}</a>
+</section>
+
+<section class="catalog-layout container">
+  <aside class="filter-panel">
+    <form action="/catalog" method="get">
+      <h2>{{categoryTitle}}</h2>
+      <input type="hidden" name="lang" value="{{lang}}">
+      {{{typeHiddenInput}}}
+
+      <div class="filter-field filter-field-full">
+        <label class="field-label" for="q">{{searchLabel}}</label>
+        <input class="control" id="q" type="search" name="q" maxlength="80" value="{{query}}" placeholder="{{searchPlaceholder}}">
+      </div>
+
+      <div class="filter-field">
+        <label class="field-label" for="cat">{{categoryLabel}}</label>
+        {{{categorySelectHtml}}}
+      </div>
+
+      <div class="filter-field">
+        <label class="field-label" for="sort">{{sortLabel}}</label>
+        <select id="sort" name="sort">
+          <option value="featured" {{selSortFeatured}}>{{sortFeatured}}</option>
+          <option value="price-asc" {{selSortLow}}>{{sortLow}}</option>
+          <option value="price-desc" {{selSortHigh}}>{{sortHigh}}</option>
+          <option value="name" {{selSortName}}>{{sortName}}</option>
+        </select>
+      </div>
+
+      <div class="filter-field filter-field-full">
+        <label class="field-label">{{priceLabel}} ({{currencyLabel}})</label>
+        <div class="price-filters">
+          <input class="control" name="min" type="number" min="0" max="100000000" inputmode="numeric" value="{{minValue}}" placeholder="{{priceMin}}" aria-label="{{priceMin}}">
+          <span>—</span>
+          <input class="control" name="max" type="number" min="0" max="100000000" inputmode="numeric" value="{{maxValue}}" placeholder="{{priceMax}}" aria-label="{{priceMax}}">
+        </div>
+      </div>
+
+      <div class="filter-field filter-field-full">
+        <label class="checkbox-field" for="stock-only">
+          <input id="stock-only" type="checkbox" name="stock" value="1" {{inStockChecked}}>
+          <span>{{inStockOnlyLabel}}</span>
+        </label>
+      </div>
+
+      <button class="button button-primary filter-submit" type="submit">{{showResults}}</button>
+      <a class="filter-reset" href="{{resetHref}}">{{resetFilters}}</a>
+    </form>
+  </aside>
+
+  <div class="catalog-results">
+    <div class="catalog-topline">
+      <span><strong>{{foundCount}}</strong> {{productsFoundLabel}}</span>
+      <div class="active-filter-pills">
+        {{{filterChipsHtml}}}
+        {{{clearAllLinkHtml}}}
+      </div>
+    </div>
+    {{{gridHtml}}}
+  </div>
+</section>
+

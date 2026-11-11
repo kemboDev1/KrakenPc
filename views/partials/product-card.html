@@ -1,0 +1,35 @@
+<article class="product-card {{compactClass}}" data-product-card="{{id}}">
+  <div class="card-art">
+    <a href="{{productHref}}" tabindex="-1" aria-hidden="true">{{{imageHtml}}}</a>
+    {{{tagHtml}}}
+    <div class="card-icon-actions">
+      <form action="/favorites/toggle" method="post" data-async-form="favorite" data-product-id="{{id}}">
+        {{{csrfField}}}
+        <input type="hidden" name="id" value="{{id}}">
+        <input type="hidden" name="back" value="{{back}}">
+        <button class="circle-button {{favActiveClass}}" type="submit" aria-pressed="{{favPressed}}" aria-label="{{favoriteLabel}}" title="{{favoriteLabel}}">{{{iconHeart}}}</button>
+      </form>
+    </div>
+  </div>
+  <div class="card-body">
+    <a class="card-name" href="{{productHref}}">{{name}}</a>
+    <div class="card-specs">{{{specsHtml}}}</div>
+    {{{stockHtml}}}
+    {{{priceHtml}}}
+    <div class="card-actions">
+      <form action="/cart/add" method="post" data-async-form="cart-add" data-product-id="{{id}}">
+        {{{csrfField}}}
+        <input type="hidden" name="id" value="{{id}}">
+        <input type="hidden" name="back" value="{{back}}">
+        <button class="button button-primary" type="submit" {{addCartDisabledAttr}}>{{addCartLabel}}</button>
+      </form>
+      <form action="/compare/toggle" method="post" data-async-form="compare" data-product-id="{{id}}">
+        {{{csrfField}}}
+        <input type="hidden" name="id" value="{{id}}">
+        <input type="hidden" name="back" value="{{back}}">
+        <button class="circle-button compare-button {{compareActiveClass}}" type="submit" aria-pressed="{{comparePressed}}" aria-label="{{compareLabel}}" title="{{compareLabel}}">{{{iconCompare}}}</button>
+      </form>
+    </div>
+  </div>
+</article>
+

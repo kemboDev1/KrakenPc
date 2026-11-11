@@ -1,0 +1,46 @@
+<section class="product-detail container">
+  <div class="product-detail-art">
+    <a class="breadcrumb" href="/catalog?cat={{categoryEncoded}}">{{navCatalog}} <span>›</span> {{categoryLabel}}</a>
+    <div class="detail-art-frame">
+      {{{imageHtml}}}
+      <span class="detail-art-label">KRAKENPC · {{brand}}</span>
+    </div>
+  </div>
+  <div class="product-detail-copy">
+    <div class="detail-tags">
+      {{{tagHtml}}}
+      {{{stockHtml}}}
+    </div>
+    <h1>{{name}}</h1>
+    <p class="detail-description">{{description}}</p>
+    <div class="detail-price">{{{priceHtml}}}</div>
+    <p class="delivery-note"><span>✓</span> {{deliveryNoteText}}</p>
+    <div class="detail-actions">
+      <form action="/cart/add" method="post" data-async-form="cart-add" data-product-id="{{id}}">
+        {{{csrfField}}}
+        <input type="hidden" name="id" value="{{id}}">
+        <input type="hidden" name="back" value="{{backUrl}}">
+        <button class="button button-primary" type="submit" {{addCartDisabledAttr}}>{{addCartLabel}}</button>
+      </form>
+      <form action="/favorites/toggle" method="post" data-async-form="favorite" data-product-id="{{id}}">
+        {{{csrfField}}}
+        <input type="hidden" name="id" value="{{id}}">
+        <input type="hidden" name="back" value="{{backUrl}}">
+        <button class="circle-button {{favActiveClass}}" type="submit" aria-pressed="{{favPressed}}" title="{{favoriteLabel}}" aria-label="{{favoriteLabel}}">{{{iconHeart}}}</button>
+      </form>
+      <form action="/compare/toggle" method="post" data-async-form="compare" data-product-id="{{id}}">
+        {{{csrfField}}}
+        <input type="hidden" name="id" value="{{id}}">
+        <input type="hidden" name="back" value="{{backUrl}}">
+        <button class="circle-button compare-button {{compareActiveClass}}" type="submit" aria-pressed="{{comparePressed}}" title="{{compareLabel}}" aria-label="{{compareLabel}}">{{{iconCompare}}}</button>
+      </form>
+    </div>
+    <section class="spec-block">
+      <h2>{{specsTitle}}</h2>
+      <ul class="spec-list">{{{specsListHtml}}}</ul>
+    </section>
+    <p class="price-disclaimer">{{priceNote}}. {{freeFrom}}</p>
+  </div>
+</section>
+{{{relatedSectionHtml}}}
+

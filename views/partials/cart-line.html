@@ -1,0 +1,28 @@
+<article class="cart-line" data-cart-line="{{id}}">
+  <a class="cart-line-art" href="{{productHref}}">{{{imageHtml}}}</a>
+  <div class="cart-line-info">
+    <a href="{{productHref}}">{{name}}</a>
+    <p>{{specsShort}}</p>
+    <span>{{{stockHtml}}}</span>
+  </div>
+  <div class="cart-line-price">
+    <strong data-line-total>{{lineTotalFormatted}}</strong>
+    <span>{{unitPriceFormatted}} / {{unitWord}}</span>
+  </div>
+  <form class="quantity-form" method="post" action="/cart/update" data-async-form="cart-update" data-product-id="{{id}}">
+    {{{csrfField}}}
+    <input type="hidden" name="id" value="{{id}}">
+    <button type="button" class="qty-step" data-qty-step="-1" aria-label="−">−</button>
+    <label class="sr-only" for="qty-{{id}}">{{quantityLabel}}</label>
+    <input id="qty-{{id}}" name="qty" type="number" min="0" max="{{maxQty}}" value="{{qty}}" inputmode="numeric">
+    <button type="button" class="qty-step" data-qty-step="1" aria-label="+">+</button>
+    <button class="quantity-update" type="submit" aria-label="{{updateLabel}}">↻</button>
+  </form>
+  <form method="post" action="/cart/remove" data-async-form="cart-remove" data-product-id="{{id}}">
+    {{{csrfField}}}
+    <input type="hidden" name="id" value="{{id}}">
+    <input type="hidden" name="back" value="/cart">
+    <button class="remove-button" type="submit" aria-label="{{removeLabel}}">×</button>
+  </form>
+</article>
+

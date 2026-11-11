@@ -1,0 +1,36 @@
+<article class="admin-order">
+  <div class="admin-order-header">
+    <div>
+      <span class="order-number">{{id}}</span>
+      <time datetime="{{createdAtIso}}">{{createdAtFormatted}}</time>
+    </div>
+    <span class="order-status status-{{status}}">{{statusLabel}}</span>
+  </div>
+  <div class="admin-order-body">
+    <div class="admin-customer">
+      <h2>{{customerName}}</h2>
+      <a href="tel:{{phoneDial}}">{{phone}}</a>
+      <p>{{address}}</p>
+      {{{noteHtml}}}
+    </div>
+    <div class="admin-line-items">
+      {{{itemsHtml}}}
+      <div class="admin-total">
+        <span>{{totalLabel}}</span>
+        <strong>{{totalFormatted}}</strong>
+      </div>
+      <div class="telegram-bar">
+        <span class="telegram-state">Telegram: <b>{{telegramStatus}}</b>{{telegramErrorSuffix}}</span>
+        {{{retryFormHtml}}}
+      </div>
+    </div>
+  </div>
+  <form class="status-form" method="post" action="/admin/status">
+    {{{csrfField}}}
+    <input type="hidden" name="id" value="{{id}}">
+    <label class="sr-only" for="status-{{id}}">{{statusTitle}}</label>
+    <select name="status" id="status-{{id}}">{{{statusOptionsHtml}}}</select>
+    <button class="button button-secondary" type="submit">{{updateStatusLabel}}</button>
+  </form>
+</article>
+

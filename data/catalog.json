@@ -1,0 +1,96 @@
+[
+  {
+    "id":"pc-aurora-7800",
+    "slug":"kraken-aurora-7800x3d-rtx4070s",
+    "type":"pc","category":"pcs","brand":"KrakenPC","tag":"mostLoved","stock":6,"price":21990000,"oldPrice":23990000,
+    "name":{"uz":"Kraken Aurora · RTX 4070 Super","ru":"Kraken Aurora · RTX 4070 Super","en":"Kraken Aurora · RTX 4070 Super"},
+    "description":{"uz":"Silliq 1440p o‘yin va jonli efir uchun sinovdan o‘tkazilgan kuchli yig‘ma. Windows o‘rnatilgan, bir yil servis kafolati.","ru":"Готовая система для плавного гейминга в 1440p и трансляций. Windows установлена, год сервисной гарантии.","en":"A carefully tested build for smooth 1440p gaming and streaming. Windows installed, with one year of service warranty."},
+    "specs":["AMD Ryzen 7 7800X3D","GeForce RTX 4070 SUPER 12 GB","32 GB DDR5 6000 MHz","2 TB NVMe SSD","B650 Wi-Fi motherboard","850 W 80+ Gold PSU","360 mm liquid cooling"],"image":"tower","featured":true
+  },
+  {
+    "id":"pc-phantom-4080","slug":"kraken-phantom-rtx4080-super","type":"pc","category":"pcs","brand":"KrakenPC","tag":"highEnd","stock":3,"price":36990000,
+    "name":{"uz":"Kraken Phantom · RTX 4080 Super","ru":"Kraken Phantom · RTX 4080 Super","en":"Kraken Phantom · RTX 4080 Super"},
+    "description":{"uz":"4K o‘yin va og‘ir render uchun yuqori darajadagi tizim. Sokin sovitish, tartibli kabel boshqaruvi va yakuniy stress-test.","ru":"Система высокого класса для игр в 4K и тяжёлого рендеринга. Тихое охлаждение, аккуратная сборка и финальный стресс-тест.","en":"A high-end system for 4K gaming and demanding renders. Quiet cooling, tidy cable management, and a final stress test."},
+    "specs":["Intel Core i7-14700KF","GeForce RTX 4080 SUPER 16 GB","64 GB DDR5 6400 MHz","2 TB Gen 4 NVMe SSD","Z790 Wi-Fi motherboard","1000 W 80+ Gold PSU","360 mm liquid cooling"],"image":"tower","featured":true
+  },
+  {
+    "id":"pc-frost-4060","slug":"kraken-frost-rtx4060","type":"pc","category":"pcs","brand":"KrakenPC","tag":"greatValue","stock":8,"price":10990000,
+    "name":{"uz":"Kraken Frost · RTX 4060","ru":"Kraken Frost · RTX 4060","en":"Kraken Frost · RTX 4060"},
+    "description":{"uz":"Birinchi gaming kompyuteri va kundalik ishlar uchun ajoyib start. 1080p o‘yinlar uchun balanslangan yig‘ma.","ru":"Отличный старт для первого игрового ПК и повседневных задач. Сбалансированная сборка для игр в 1080p.","en":"A strong first gaming PC for everyday work and 1080p play. Balanced components without paying for performance you do not need."},
+    "specs":["Intel Core i5-14400F","GeForce RTX 4060 8 GB","16 GB DDR5 5600 MHz","1 TB NVMe SSD","B760 motherboard","650 W 80+ Bronze PSU","Air tower cooler"],"image":"tower"
+  },
+  {
+    "id":"pc-starter-7600","slug":"kraken-starter-rx7600","type":"pc","category":"pcs","brand":"KrakenPC","tag":"entry","stock":9,"price":8290000,
+    "name":{"uz":"Kraken Starter · RX 7600","ru":"Kraken Starter · RX 7600","en":"Kraken Starter · RX 7600"},
+    "description":{"uz":"Kundalik o‘yin va o‘qish uchun hamyonbop to‘liq PC. Keyin xotira yoki videokartani osongina yangilash mumkin.","ru":"Доступный готовый ПК для повседневных игр и учёбы. Позже легко добавить память или заменить видеокарту.","en":"An affordable complete PC for gaming and study. Upgrade the memory or graphics card as your needs grow."},
+    "specs":["AMD Ryzen 5 5600","Radeon RX 7600 8 GB","16 GB DDR4 3600 MHz","1 TB NVMe SSD","B550 motherboard","650 W 80+ Bronze PSU","Quiet air cooling"],"image":"tower"
+  },
+  {
+    "id":"gpu-4070s","slug":"msi-rtx-4070-super-ventus-2x","type":"part","category":"graphics","brand":"MSI","tag":"new","stock":5,"price":9290000,"oldPrice":9990000,
+    "name":{"uz":"MSI RTX 4070 Super Ventus 2X","ru":"MSI RTX 4070 Super Ventus 2X","en":"MSI RTX 4070 Super Ventus 2X"},"description":{"uz":"1440p o‘yinlar uchun yuqori unumdorlik va samarali ikki ventilyatorli sovitish.","ru":"Высокая производительность в 1440p с эффективным охлаждением на двух вентиляторах.","en":"High-performance 1440p gaming with efficient dual-fan cooling."},"specs":["12 GB GDDR6X","Boost clock 2505 MHz","2 × Torx Fan 4.0","DLSS 3 support","2-slot design"],"image":"graphics"
+  },
+  {
+    "id":"gpu-4060","slug":"msi-rtx-4060-ventus-2x","type":"part","category":"graphics","brand":"MSI","tag":"greatValue","stock":11,"price":4590000,
+    "name":{"uz":"MSI GeForce RTX 4060 Ventus 2X","ru":"MSI GeForce RTX 4060 Ventus 2X","en":"MSI GeForce RTX 4060 Ventus 2X"},"description":{"uz":"Samarali, sokin videokarta. Full HD o‘yin va ijodkorlik uchun.","ru":"Эффективная тихая видеокарта для Full HD-гейминга и творчества.","en":"An efficient, quiet graphics card for Full HD gaming and creative work."},"specs":["8 GB GDDR6","Boost clock 2490 MHz","2 × Torx Fan 4.0","DLSS 3 support","171 mm length"],"image":"graphics"
+  },
+  {
+    "id":"gpu-4080s","slug":"gigabyte-rtx-4080-super-gaming-oc","type":"part","category":"graphics","brand":"Gigabyte","tag":"highEnd","stock":2,"price":15990000,
+    "name":{"uz":"Gigabyte RTX 4080 Super Gaming OC","ru":"Gigabyte RTX 4080 Super Gaming OC","en":"Gigabyte RTX 4080 Super Gaming OC"},"description":{"uz":"4K o‘yin va professional grafik vazifalar uchun kuchli, uch ventilyatorli karta.","ru":"Мощная видеокарта с тремя вентиляторами для игр в 4K и профессиональной графики.","en":"A triple-fan powerhouse for 4K gaming and professional graphics work."},"specs":["16 GB GDDR6X","Boost clock 2595 MHz","WINDFORCE triple fan","DLSS 3 support","3.5-slot design"],"image":"graphics"
+  },
+  {
+    "id":"cpu-7800x3d","slug":"amd-ryzen-7-7800x3d","type":"part","category":"processors","brand":"AMD","tag":"mostLoved","stock":7,"price":5090000,
+    "name":{"uz":"AMD Ryzen 7 7800X3D","ru":"AMD Ryzen 7 7800X3D","en":"AMD Ryzen 7 7800X3D"},"description":{"uz":"3D V-Cache texnologiyasi bilan yuqori darajadagi o‘yin protsessori.","ru":"Высокопроизводительный игровой процессор с технологией 3D V-Cache.","en":"A high-performance gaming processor with AMD 3D V-Cache technology."},"specs":["8 cores · 16 threads","4.2–5.0 GHz","96 MB L3 cache","AM5 socket","120 W TDP"],"image":"cpu"
+  },
+  {
+    "id":"cpu-7600","slug":"amd-ryzen-5-7600","type":"part","category":"processors","brand":"AMD","tag":"greatValue","stock":12,"price":2190000,
+    "name":{"uz":"AMD Ryzen 5 7600","ru":"AMD Ryzen 5 7600","en":"AMD Ryzen 5 7600"},"description":{"uz":"Yangi AM5 platformasi va gaming uchun ishonchli 6 yadroli protsessor.","ru":"Надёжный шестиядерный процессор для платформы AM5 и игрового ПК.","en":"A dependable six-core processor for an AM5 gaming PC."},"specs":["6 cores · 12 threads","3.8–5.1 GHz","38 MB total cache","AM5 socket","65 W TDP"],"image":"cpu"
+  },
+  {
+    "id":"cpu-i5144","slug":"intel-core-i5-14400f","type":"part","category":"processors","brand":"Intel","tag":"new","stock":9,"price":2390000,
+    "name":{"uz":"Intel Core i5-14400F","ru":"Intel Core i5-14400F","en":"Intel Core i5-14400F"},"description":{"uz":"Kundalik multitasking va zamonaviy gaming uchun samarali Intel protsessori.","ru":"Эффективный процессор Intel для многозадачной работы и современного гейминга.","en":"An efficient Intel processor for multitasking and modern gaming."},"specs":["10 cores · 16 threads","Up to 4.7 GHz","20 MB cache","LGA1700 socket","65 W base power"],"image":"cpu"
+  },
+  {
+    "id":"mb-b650","slug":"msi-b650-gaming-plus-wifi","type":"part","category":"motherboards","brand":"MSI","tag":"new","stock":8,"price":2690000,
+    "name":{"uz":"MSI B650 Gaming Plus WiFi","ru":"MSI B650 Gaming Plus WiFi","en":"MSI B650 Gaming Plus WiFi"},"description":{"uz":"AM5 tizimlari uchun mustahkam Wi-Fi 6E va kengaytirish imkoniyatlari.","ru":"Надёжная плата AM5 с Wi-Fi 6E и широкими возможностями расширения.","en":"A dependable AM5 board with Wi-Fi 6E and a generous set of expansion options."},"specs":["AMD B650 chipset","AM5 socket","4 × DDR5 slots","PCIe 4.0 M.2","Wi-Fi 6E · 2.5 Gb LAN"],"image":"board"
+  },
+  {
+    "id":"mb-b760","slug":"asus-prime-b760-plus-wifi","type":"part","category":"motherboards","brand":"ASUS","tag":"greatValue","stock":7,"price":2190000,
+    "name":{"uz":"ASUS Prime B760-Plus WiFi","ru":"ASUS Prime B760-Plus WiFi","en":"ASUS Prime B760-Plus WiFi"},"description":{"uz":"Intel Core protsessorlari uchun DDR5, Wi-Fi va qulay kengaytirish imkoniyatlari.","ru":"Материнская плата DDR5 с Wi-Fi для процессоров Intel Core и удобным расширением.","en":"An Intel Core board with DDR5, Wi-Fi, and a practical set of expansion options."},"specs":["Intel B760 chipset","LGA1700 socket","4 × DDR5 slots","PCIe 4.0 M.2","Wi-Fi 6 · 2.5 Gb LAN"],"image":"board"
+  },
+  {
+    "id":"ram-fury32","slug":"kingston-fury-beast-32gb-ddr5","type":"part","category":"memory","brand":"Kingston","tag":"mostLoved","stock":15,"price":1090000,
+    "name":{"uz":"Kingston Fury Beast 32 GB DDR5","ru":"Kingston Fury Beast 32 ГБ DDR5","en":"Kingston Fury Beast 32 GB DDR5"},"description":{"uz":"16 GB dan ikki modul. Multitasking, yangi o‘yinlar va AM5 uchun ideal.","ru":"Комплект из двух модулей по 16 ГБ. Отличный выбор для современных игр.","en":"Two 16 GB modules for smooth multitasking, new games, and AM5 systems."},"specs":["32 GB · 2 × 16 GB","DDR5 6000 MHz","CL36","AMD EXPO ready","Matte black heatspreader"],"image":"memory"
+  },
+  {
+    "id":"ssd-990pro","slug":"samsung-990-pro-2tb-nvme","type":"part","category":"storage","brand":"Samsung","tag":"highEnd","stock":6,"price":1890000,
+    "name":{"uz":"Samsung 990 Pro 2 TB NVMe","ru":"Samsung 990 Pro 2 ТБ NVMe","en":"Samsung 990 Pro 2 TB NVMe"},"description":{"uz":"Talabchan o‘yinlar va ijodiy ishlar uchun tezkor, ishonchli SSD.","ru":"Быстрый и надёжный SSD для требовательных игр и творческих задач.","en":"A responsive, reliable SSD for demanding games and creative workloads."},"specs":["2 TB NVMe M.2","PCIe 4.0 ×4","Up to 7450 MB/s read","Up to 6900 MB/s write","5-year limited warranty"],"image":"storage"
+  },
+  {
+    "id":"psu-rm850","slug":"corsair-rm850e-850w-gold","type":"part","category":"power","brand":"Corsair","tag":"highEnd","stock":4,"price":1690000,
+    "name":{"uz":"Corsair RM850e 850 W Gold","ru":"Corsair RM850e 850 Вт Gold","en":"Corsair RM850e 850 W Gold"},"description":{"uz":"Modulli kabel tizimi va 80 Plus Gold samaradorligiga ega sokin quvvat manbai.","ru":"Тихий модульный блок питания с эффективностью 80 Plus Gold.","en":"A quiet, modular power supply rated for 80 Plus Gold efficiency."},"specs":["850 W continuous power","80 Plus Gold","Fully modular cables","ATX 3.0 ready","7-year warranty"],"image":"power"
+  },
+  {
+    "id":"cooler-ak620","slug":"deepcool-ak620-digital","type":"part","category":"cooling","brand":"DeepCool","tag":"mostLoved","stock":8,"price":990000,
+    "name":{"uz":"DeepCool AK620 Digital","ru":"DeepCool AK620 Digital","en":"DeepCool AK620 Digital"},"description":{"uz":"Ikki minorali radiator va ko‘rinadigan harorat displeyiga ega kuchli havo sovitgich.","ru":"Мощный двухбашенный воздушный кулер с наглядным дисплеем температуры.","en":"A high-capacity dual-tower air cooler with a clear temperature display."},"specs":["Dual-tower heatsink","2 × 120 mm fans","Live temperature display","AM5 · LGA1700 support","Up to 260 W TDP"],"image":"cooling"
+  },
+  {
+    "id":"case-h7flow","slug":"nzxt-h7-flow-black","type":"part","category":"cases","brand":"NZXT","tag":"new","stock":5,"price":1790000,
+    "name":{"uz":"NZXT H7 Flow Black","ru":"NZXT H7 Flow Black","en":"NZXT H7 Flow Black"},"description":{"uz":"Kuchli havo oqimi va tartibli yig‘ma uchun zamonaviy mid-tower korpus.","ru":"Современный mid-tower корпус с эффективной вентиляцией и удобной сборкой.","en":"A contemporary mid-tower case with excellent airflow and clean cable management."},"specs":["Mid-tower ATX case","Perforated airflow panel","GPU clearance 400 mm","360 mm radiator support","USB-C front I/O"],"image":"case"
+  },
+  {
+    "id":"monitor-lg27","slug":"lg-ultragear-27gn800-qhd","type":"part","category":"monitors","brand":"LG","tag":"mostLoved","stock":6,"price":3590000,
+    "name":{"uz":"LG UltraGear 27″ QHD 180 Hz","ru":"LG UltraGear 27″ QHD 180 Гц","en":"LG UltraGear 27″ QHD 180 Hz"},"description":{"uz":"Tezkor 180 Hz IPS panel va QHD aniqligi bilan o‘yinning har bir kadrini ko‘ring.","ru":"Быстрая IPS-матрица 180 Гц и чёткое разрешение QHD для плавной игры.","en":"See every frame on a fast 180 Hz IPS panel with crisp QHD resolution."},"specs":["27-inch IPS panel","2560 × 1440 · QHD","180 Hz refresh rate","1 ms GtG","Adaptive-Sync · HDR10"],"image":"monitor"
+  },
+  {
+    "id":"keyboard-hyperx","slug":"hyperx-alloy-origins-core","type":"part","category":"peripherals","brand":"HyperX","tag":"greatValue","stock":13,"price":990000,
+    "name":{"uz":"HyperX Alloy Origins Core","ru":"HyperX Alloy Origins Core","en":"HyperX Alloy Origins Core"},"description":{"uz":"Ixcham mexanik klaviatura, ishonchli qizil switch va mustahkam aluminiy korpus.","ru":"Компактная механическая клавиатура с надёжными линейными переключателями и алюминиевым корпусом.","en":"A compact mechanical keyboard with dependable linear switches and a sturdy aluminium body."},"specs":["Tenkeyless layout","Linear red switches","Aircraft-grade aluminium","Customisable RGB","Detachable USB-C cable"],"image":"keyboard"
+  },
+  {
+    "id":"mouse-g502","slug":"logitech-g502-hero","type":"part","category":"peripherals","brand":"Logitech","tag":"mostLoved","stock":14,"price":690000,
+    "name":{"uz":"Logitech G502 HERO","ru":"Logitech G502 HERO","en":"Logitech G502 HERO"},"description":{"uz":"Yuqori aniqlikdagi sensor, sozlanadigan og‘irlik va 11 ta programmalanadigan tugma.","ru":"Точный сенсор, регулируемый вес и 11 программируемых кнопок.","en":"A precise optical sensor, adjustable weight system, and 11 programmable buttons."},"specs":["HERO 25K sensor","Up to 25,600 DPI","11 programmable buttons","Adjustable weights","LIGHTSYNC RGB"],"image":"mouse"
+  },
+  {
+    "id":"headset-cloud3","slug":"hyperx-cloud-iii-wireless","type":"part","category":"peripherals","brand":"HyperX","tag":"new","stock":7,"price":1690000,
+    "name":{"uz":"HyperX Cloud III Wireless","ru":"HyperX Cloud III Wireless","en":"HyperX Cloud III Wireless"},"description":{"uz":"Uzoq o‘yin seanslari uchun yengil simsiz quloqchin, fazoviy ovoz va tiniq mikrofon.","ru":"Лёгкая беспроводная гарнитура с объёмным звуком и чётким микрофоном.","en":"A lightweight wireless headset with immersive sound and a clear microphone."},"specs":["53 mm angled drivers","Up to 120-hour battery","2.4 GHz wireless","Detachable 10 mm mic","DTS Headphone:X support"],"image":"headset"
+  }
+]
