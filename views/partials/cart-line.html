@@ -12,10 +12,10 @@
   <form class="quantity-form" method="post" action="/cart/update" data-async-form="cart-update" data-product-id="{{id}}">
     {{{csrfField}}}
     <input type="hidden" name="id" value="{{id}}">
-    <button type="button" class="qty-step" data-qty-step="-1" aria-label="-">{{{iconMinus}}}</button>
+    <button type="button" class="qty-step" data-qty-step="-1" aria-label="{{decQtyLabel}}">{{{iconMinus}}}</button>
     <label class="sr-only" for="qty-{{id}}">{{quantityLabel}}</label>
     <input id="qty-{{id}}" name="qty" type="number" min="0" max="{{maxQty}}" value="{{qty}}" inputmode="numeric">
-    <button type="button" class="qty-step" data-qty-step="1" aria-label="+">{{{iconPlus}}}</button>
+    <button type="button" class="qty-step" data-qty-step="1" aria-label="{{incQtyLabel}}">{{{iconPlus}}}</button>
     <button class="quantity-update" type="submit" aria-label="{{updateLabel}}">{{{iconRefresh}}}</button>
   </form>
   <form method="post" action="/cart/remove" data-async-form="cart-remove" data-product-id="{{id}}">

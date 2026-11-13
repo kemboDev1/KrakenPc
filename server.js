@@ -13,7 +13,7 @@ const {
 const { tr } = u(require('./src/i18n'));
 const {
   initStore, saveStore, getStore, productById, productBySlug,
-  getSession, rotateSession, validCsrf
+  getSession, rotateSession, flushSession, validCsrf
 } = u(require('./src/storage'));
 const { productArtworkSvg, faviconPngBuffer, faviconIcoBuffer } = u(require('./src/artwork'));
 const { sendOrderReport, sendStatusReport, startBotPolling, stopBotPolling } = u(require('./src/telegram'));
@@ -415,6 +415,13 @@ async function handleGet(req, res, session, pathname, url) {
   if (pathname === '/checkout') return checkoutPage(req, res, session);
   if (pathname === '/success') return successPage(req, res, session, url);
   if (pathname === '/admin') return adminPage(req, res, session, url);
+  if (pathname === '/settings') {
+    const lang = url.searchParams.get('lang');
+    if (['uz', 'ru', 'en'].includes(lang)) session.lang = lang;
+    const theme = url.searchParams.get('theme');
+    if (['light', 'dark'].includes(theme)) session.theme = theme;
+    return redirect(res, localPath(url.searchParams.get('back') || '/'));
+  }
   if (pathname.startsWith('/product/')) {
     const slug = pathname.slice('/product/'.length);
     if (LEGACY_SLUG_REDIRECTS[slug]) {
@@ -433,7 +440,6 @@ async function handleApiPost(req, res, session, pathname) {
   if (pathname === '/api/settings') {
     if (['uz', 'ru', 'en'].includes(form.lang)) session.lang = form.lang;
     if (['light', 'dark'].includes(form.theme)) session.theme = form.theme;
-    await saveStore();
     return sendJson(res, { ok: true, lang: session.lang, theme: session.theme });
   }
 
@@ -449,7 +455,6 @@ async function handleApiPost(req, res, session, pathname) {
     let capped = false;
     if (current < product.stock && current < 99) {
       session.cart[product.id] = current + 1;
-      await saveStore();
     } else {
       capped = true;
     }
@@ -464,7 +469,6 @@ async function handleApiPost(req, res, session, pathname) {
     }
     if (qty === 0) delete session.cart[product.id];
     else session.cart[product.id] = qty;
-    await saveStore();
     const summary = formattedCartSummary(session);
     return sendJson(res, {
       ok: true,
@@ -477,7 +481,6 @@ async function handleApiPost(req, res, session, pathname) {
 
   if (pathname === '/api/cart/remove') {
     delete session.cart[String(form.id || '')];
-    await saveStore();
     const summary = formattedCartSummary(session);
     return sendJson(res, {
       ok: true,
@@ -498,7 +501,6 @@ async function handleApiPost(req, res, session, pathname) {
       session.favorites.push(product.id);
       active = true;
     }
-    await saveStore();
     return sendJson(res, { ok: true, active, counts: sessionCounts(session) });
   }
 
@@ -516,7 +518,6 @@ async function handleApiPost(req, res, session, pathname) {
       session.compare.push(product.id);
       active = true;
     }
-    await saveStore();
     return sendJson(res, { ok: true, active, full, counts: sessionCounts(session) });
   }
 
@@ -526,8 +527,10 @@ async function handleApiPost(req, res, session, pathname) {
 async function handlePost(req, res, session, pathname) {
   const isApi = pathname.startsWith('/api/');
   if (!validCsrf(req, session)) {
-    if (isApi) return sendJson(res, { ok: false, error: tr(session, 'csrfError') }, 403);
-    return forbiddenPage(req, res, session);
+    if (isApi) return sendJson(res, { ok: false, error: tr(session, 'csrfError'), reload: true }, 403);
+    // A stale/absent session must never leave the visitor on an "expired" page:
+    // bounce them back to the page they came from with a fresh session cookie.
+    return redirect(res, localPath((req.body && req.body.back) || '/'));
   }
   if (isApi) return handleApiPost(req, res, session, pathname);
 
@@ -537,7 +540,6 @@ async function handlePost(req, res, session, pathname) {
   if (pathname === '/settings') {
     if (['uz', 'ru', 'en'].includes(form.lang)) session.lang = form.lang;
     if (['light', 'dark'].includes(form.theme)) session.theme = form.theme;
-    await saveStore();
     const destination = new URL(localPath(form.back), 'http://local');
     if (session.lang === 'uz') destination.searchParams.delete('lang');
     else destination.searchParams.set('lang', session.lang);
@@ -551,7 +553,6 @@ async function handlePost(req, res, session, pathname) {
     if (current >= product.stock || current >= 99) return redirect(res, '/cart');
     if (!current && Object.keys(session.cart).length >= MAX_CART_LINES) return redirect(res, '/cart');
     session.cart[product.id] = current + 1;
-    await saveStore();
     return redirect(res, localPath(form.back));
   }
 
@@ -561,19 +562,16 @@ async function handlePost(req, res, session, pathname) {
     if (!product || !Number.isInteger(qty) || qty < 0 || qty > Math.min(99, product.stock)) return redirect(res, '/cart');
     if (qty === 0) delete session.cart[product.id];
     else session.cart[product.id] = qty;
-    await saveStore();
     return redirect(res, '/cart');
   }
 
   if (pathname === '/cart/remove') {
     delete session.cart[String(form.id || '')];
-    await saveStore();
     return redirect(res, localPath(form.back));
   }
 
   if (pathname === '/cart/clear') {
     session.cart = {};
-    await saveStore();
     return redirect(res, '/cart');
   }
 
@@ -583,7 +581,6 @@ async function handlePost(req, res, session, pathname) {
     session.favorites = session.favorites.filter(id => productById(id));
     if (session.favorites.includes(product.id)) session.favorites = session.favorites.filter(id => id !== product.id);
     else if (session.favorites.length < 40) session.favorites.push(product.id);
-    await saveStore();
     return redirect(res, localPath(form.back));
   }
 
@@ -593,13 +590,11 @@ async function handlePost(req, res, session, pathname) {
     session.compare = session.compare.filter(id => productById(id));
     if (session.compare.includes(product.id)) session.compare = session.compare.filter(id => id !== product.id);
     else if (session.compare.length < 4) session.compare.push(product.id);
-    await saveStore();
     return redirect(res, localPath(form.back));
   }
 
   if (pathname === '/compare/clear') {
     session.compare = [];
-    await saveStore();
     return redirect(res, '/compare');
   }
 
@@ -612,7 +607,6 @@ async function handlePost(req, res, session, pathname) {
       const id = evaluation.selected[field].id;
       session.cart[id] = Math.max(1, Number(session.cart[id] || 0));
     }
-    await saveStore();
     return redirect(res, '/cart');
   }
 
@@ -801,6 +795,12 @@ async function handleRequest(req, res) {
     return res.end('Bad request');
   }
 
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    res.statusCode = 301;
+    res.setHeader('Location', pathname.replace(/\/+$/, '') + url.search);
+    return res.end();
+  }
+
   if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST') {
     res.setHeader('Allow', 'GET, HEAD, POST');
     res.statusCode = 405;
@@ -831,19 +831,32 @@ async function handleRequest(req, res) {
 
   let session;
   try {
-    const createIfMissing = req.method === 'GET';
-    session = await getSession(req, res, { createIfMissing });
+    session = await getSession(req, res, { createIfMissing: true });
   } catch {
     res.statusCode = 500;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     return res.end('Store session could not be loaded.');
   }
 
+  // The whole visitor session lives in one sealed cookie, so it has to be
+  // written onto the response before the handler ends. Patching res.end keeps
+  // that in a single place instead of touching every route.
+  req.session = session;
+  const nativeEnd = res.end;
+  res.end = function flushedEnd(...args) {
+    try {
+      flushSession(req, res);
+    } catch (error) {
+      console.error('Session cookie could not be written: ' + (error && error.message));
+    }
+    return nativeEnd.apply(res, args);
+  };
+
   try {
     const requestedLang = url.searchParams.get('lang');
     if (req.method === 'GET' && ['uz', 'ru', 'en'].includes(requestedLang) && session.lang !== requestedLang) {
       session.lang = requestedLang;
-      if (!session.ephemeral) await saveStore();
+      // session cookie is flushed at the end of the request
     }
     session.currentPath = localPath(req.url);
 

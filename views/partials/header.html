@@ -2,8 +2,7 @@
 <div class="announcement">
   <div class="container announcement-inner">
     <span><span class="live-dot"></span>{{region}}</span>
-    <form class="preferences" action="/settings" method="post" data-settings-form>
-      {{{csrfField}}}
+    <form class="preferences" action="/settings" method="get" data-settings-form>
       <label class="sr-only" for="language">{{langLabel}}</label>
       <select id="language" name="lang" aria-label="{{langLabel}}">
         <option value="uz" {{selUz}}>UZ</option>

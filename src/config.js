@@ -76,7 +76,14 @@ function readLegacyLocalKey() {
 }
 
 function localSessionKey() {
-  if (PROD && !ON_VERCEL) return '';
+  if (ON_VERCEL) {
+    // Vercel lambdas cannot share a writable directory, so the fallback key must
+    // be derivable and stable per deployment instead of random per instance.
+    const stable = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'krakenpc';
+    console.warn('SESSION_SECRET is not set on Vercel: using a derived fallback key. Set SESSION_SECRET in the project settings.');
+    return crypto.createHash('sha256').update('krakenpc-vercel-fallback:' + stable).digest('base64url');
+  }
+  if (PROD) return '';
   try {
     fsSync.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
     const existing = readLegacyLocalKey();

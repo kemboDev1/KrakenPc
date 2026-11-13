@@ -1,7 +1,9 @@
 const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
-  TAG_KEYS, esc, safeJson, localized, formatPrice, requestOrigin, canonical, localizedRoute, localPath
+  ROOT, TAG_KEYS, esc, safeJson, localized, formatPrice, requestOrigin, canonical, localizedRoute, localPath
 } = u(require('../config'));
 const { tr } = u(require('../i18n'));
 const { productById } = u(require('../storage'));
@@ -49,8 +51,27 @@ function iconSvg(name, extraClass = '') {
   return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || ''}</svg>`;
 }
 
+const IMAGE_DIR = path.join(ROOT, 'public', 'images');
+let availableImages = null;
+
+function hasProductPhoto(id) {
+  if (!availableImages) {
+    try {
+      availableImages = new Set(
+        fs.readdirSync(IMAGE_DIR)
+          .filter(name => name.endsWith('.jpg'))
+          .map(name => name.slice(0, -4))
+      );
+    } catch {
+      availableImages = new Set();
+    }
+  }
+  return availableImages.has(id);
+}
+
 function productImageUrl(product) {
-  return `/images/${encodeURIComponent(product.id)}.jpg`;
+  const id = encodeURIComponent(product.id);
+  return hasProductPhoto(product.id) ? `/images/${id}.jpg` : `/art/${id}.svg`;
 }
 
 function productImage(product, session, { hero = false, lazy = true } = {}) {

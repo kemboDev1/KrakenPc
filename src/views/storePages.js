@@ -427,7 +427,9 @@ function cartPage(req, res, session) {
       quantityLabel: tr(session, 'quantity'),
       maxQty: String(Math.min(99, product.stock)),
       qty: String(qty),
-      updateLabel: tr(session, 'updateStatus'),
+      updateLabel: tr(session, 'updateQuantity'),
+      incQtyLabel: tr(session, 'incToCart'),
+      decQtyLabel: tr(session, 'decToCart'),
       removeLabel: tr(session, 'remove'),
       iconMinus: iconSvg('minus'),
       iconPlus: iconSvg('plus'),
@@ -626,8 +628,9 @@ function renderBuilder(req, res, session, selectedIds = null) {
 function successPage(req, res, session, url) {
   const store = getStore();
   const id = String(url.searchParams.get('id') || '').slice(0, 32);
+  if (!id) return redirectResponse(res, '/');
   const order = store.orders.find(o => o.id === id);
-  if (!order) return pageNotFound(req, res, session);
+  if (!order) return redirectResponse(res, '/');
 
   const itemsHtml = order.items
     .map(item => `<div class="success-item"><span>${esc(item.name)} × ${item.qty}</span><strong>${esc(formatPrice(item.price * item.qty, session.lang))}</strong></div>`)

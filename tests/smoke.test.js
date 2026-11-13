@@ -310,7 +310,7 @@ test('API search, CSRF enforcement, PC builder compatibility & socket mismatch',
   assert.equal(badJsonCsrf.json.ok, false);
 
   const badFormCsrf = await client.postForm('/cart/add', { id: 'mouse-g502', csrf: 'bad-token' });
-  assert.equal(badFormCsrf.status, 403);
+  assert.equal(badFormCsrf.status, 303, 'Stale form CSRF should bounce back instead of an error page');
 
   // Mismatched socket: Intel LGA1700 CPU (cpu-i5144) + AM5 board (mb-b650)
   const mismatch = await client.postForm('/builder/add', {
@@ -541,4 +541,112 @@ test('Vercel serverless exported handler boots cleanly without .env secrets or w
   assert.equal(parsed.hasKraken, true);
   assert.equal(parsed.adminLocked, true);
   assert.equal(parsed.publicOrigin, 'https://krakenpc-preview.vercel.app');
+});
+
+test('language switching is a plain GET and never renders an "expired page"', async () => {
+  const client = new SessionClient(baseUrl);
+  await client.get('/');
+
+  const switched = await client.get('/settings?lang=ru&back=/catalog');
+  assert.equal(switched.status, 303);
+  assert.equal(switched.headers.get('location'), '/catalog');
+
+  const catalog = await client.get('/catalog');
+  assert.ok(catalog.body.includes('<html lang="ru"'), 'Language switch must apply via GET');
+
+  // A stale CSRF token must bounce the visitor back, not show the scary error page
+  const stale = await client.postForm(
+    '/cart/add',
+    { csrf: 'not-a-real-token', id: 'gpu-4070s', back: '/catalog' },
+    { omitCsrf: true }
+  );
+  assert.equal(stale.status, 303);
+  assert.equal(stale.headers.get('location'), '/catalog');
+  assert.ok(!stale.body.includes('eskirib'), 'No expired-page body for stale form posts');
+});
+
+test('trailing slashes and empty success pages redirect instead of 404', async () => {
+  for (const [from, to] of [
+    ['/catalog/', '/catalog'],
+    ['/builder/', '/builder'],
+    ['/cart/', '/cart'],
+    ['/product/ryzen-7-7800x3d-rtx-4070-super/', '/product/ryzen-7-7800x3d-rtx-4070-super']
+  ]) {
+    const res = await fetch(`${baseUrl}${from}`, { redirect: 'manual' });
+    assert.equal(res.status, 301, `${from} should redirect`);
+    assert.equal(res.headers.get('location'), to);
+  }
+
+  const success = await fetch(`${baseUrl}/success`, { redirect: 'manual' });
+  assert.equal(success.status, 303);
+  assert.equal(success.headers.get('location'), '/');
+});
+
+test('sealed session cookies survive a different server instance (serverless lambdas)', async () => {
+  const clientA = new SessionClient(baseUrl);
+  await clientA.get('/');
+
+  const add = await clientA.postJson('/api/cart/add', { id: 'gpu-4070s' });
+  assert.equal(add.status, 200);
+  await clientA.get('/cart');
+  const cartA = await clientA.get('/cart');
+  assert.ok(cartA.body.includes('RTX 4070'), 'Cart item must be present on instance A');
+
+  const login = await clientA.postForm('/admin/login', { password: TEST_ADMIN_PASSWORD });
+  assert.equal(login.status, 303);
+
+  const secondData = fs.mkdtempSync(path.join(os.tmpdir(), 'krakenpc-instance2-'));
+  const port = await findFreePort();
+  const secondUrl = `http://127.0.0.1:${port}`;
+  const secondProc = spawn(process.execPath, [path.join(ROOT, 'server.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      HOST: '127.0.0.1',
+      PORT: String(port),
+      NODE_ENV: 'development',
+      PUBLIC_URL: secondUrl,
+      KRAKEN_DATA_DIR: secondData,
+      ADMIN_PASSWORD: TEST_ADMIN_PASSWORD,
+      SESSION_SECRET: TEST_SESSION_SECRET,
+      TELEGRAM_BOT_TOKEN: '',
+      TELEGRAM_ADMIN_ID: ''
+    },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  let secondErr = '';
+  secondProc.stderr.on('data', chunk => { secondErr += chunk.toString('utf8'); });
+
+  try {
+    const deadline = Date.now() + 8000;
+    let ready = false;
+    while (Date.now() < deadline) {
+      if (secondProc.exitCode !== null) throw new Error(`Second server exited: ${secondErr}`);
+      try {
+        const res = await fetch(`${secondUrl}/health`);
+        if (res.ok) { ready = true; break; }
+      } catch {
+        await new Promise(r => setTimeout(r, 80));
+      }
+    }
+    assert.ok(ready, `Second server failed to start: ${secondErr}`);
+
+    const clientB = new SessionClient(secondUrl);
+    clientB.cookies = clientA.cookies;
+    clientB.csrf = clientA.csrf;
+
+    const cartB = await clientB.get('/cart');
+    assert.equal(cartB.status, 200);
+    assert.ok(cartB.body.includes('RTX 4070'), 'Cookie-sealed cart must work on a fresh instance');
+
+    const settings = await clientB.postForm('/settings', { lang: 'en', theme: 'dark', back: '/' });
+    assert.equal(settings.status, 303, 'CSRF must validate on a fresh instance');
+
+    const adminB = await clientB.get('/admin');
+    assert.equal(adminB.status, 200);
+    assert.ok(adminB.body.includes('admin-kpis'), 'Admin session must work on a fresh instance');
+  } finally {
+    secondProc.kill('SIGKILL');
+    fs.rmSync(secondData, { recursive: true, force: true });
+  }
 });
