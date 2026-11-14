@@ -12,6 +12,230 @@
   }
   const S = BOOT.strings || {};
 
+  // ==========================================================================
+  // Cinematic Cyber Boot Theater (Audio, Particle Canvas & HUD Sequence)
+  // ==========================================================================
+  let bootSoundEnabled = true;
+  let canvasCleanup = null;
+  let bootSeqTimer = null;
+
+  function playSciFiBootAudio() {
+    if (!bootSoundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const now = ctx.currentTime;
+      
+      // Sub-bass power swell
+      const sub = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(45, now);
+      sub.frequency.exponentialRampToValueAtTime(95, now + 0.9);
+      subGain.gain.setValueAtTime(0.01, now);
+      subGain.gain.linearRampToValueAtTime(0.16, now + 0.45);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
+      sub.connect(subGain);
+      subGain.connect(ctx.destination);
+      sub.start(now);
+      sub.stop(now + 1.3);
+
+      // Sci-fi harmonic activation chime
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        const start = now + 0.5 + idx * 0.08;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.07, start + 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.85);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.9);
+      });
+    } catch {
+      // Audio is optional and fail-safe
+    }
+  }
+
+  function initBootCanvas() {
+    const canvas = document.getElementById('boot-canvas');
+    if (!canvas) return null;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    let animId;
+
+    const onResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', onResize);
+
+    const particles = [];
+    const count = Math.min(70, Math.floor(width / 20));
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: (Math.random() - 0.5) * 1.6,
+        r: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.7 + 0.3,
+        color: Math.random() > 0.4 ? '#00f2fe' : '#38ef7d'
+      });
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 105) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = '#00f2fe';
+            ctx.globalAlpha = (1 - dist / 105) * 0.22;
+            ctx.stroke();
+          }
+        }
+      }
+      animId = requestAnimationFrame(render);
+    }
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', onResize);
+    };
+  }
+
+  function dismissBootScene() {
+    clearTimeout(bootSeqTimer);
+    const scene = document.getElementById('kraken-boot-scene');
+    if (!scene) return;
+    scene.classList.add('boot-done');
+    setTimeout(() => {
+      if (canvasCleanup) {
+        canvasCleanup();
+        canvasCleanup = null;
+      }
+      scene.style.display = 'none';
+    }, 480);
+  }
+
+  function startCinematicIntro(playAudio = false) {
+    const scene = document.getElementById('kraken-boot-scene');
+    if (!scene) return;
+
+    scene.style.display = 'flex';
+    scene.classList.remove('boot-done');
+    if (canvasCleanup) canvasCleanup();
+    canvasCleanup = initBootCanvas();
+
+    if (playAudio) {
+      playSciFiBootAudio();
+    }
+
+    const progressBar = document.getElementById('boot-progress-bar');
+    const statusText = document.getElementById('boot-telemetry-status');
+    const pctText = document.getElementById('boot-telemetry-pct');
+
+    if (progressBar) progressBar.style.width = '0%';
+    if (pctText) pctText.textContent = '0%';
+    if (statusText) statusText.textContent = 'INITIALIZING QUANTUM CORE...';
+
+    // Sequence stages
+    setTimeout(() => {
+      if (progressBar) progressBar.style.width = '36%';
+      if (pctText) pctText.textContent = '36%';
+      if (statusText) statusText.textContent = 'CALIBRATING ULTRA 1440P / 4K ENGINES...';
+    }, 280);
+
+    setTimeout(() => {
+      if (progressBar) progressBar.style.width = '78%';
+      if (pctText) pctText.textContent = '78%';
+      if (statusText) statusText.textContent = 'ENGAGING OVERCLOCK MESH // 120 FPS...';
+    }, 620);
+
+    setTimeout(() => {
+      if (progressBar) progressBar.style.width = '100%';
+      if (pctText) pctText.textContent = '100%';
+      if (statusText) statusText.textContent = 'SYSTEM OPERATIONAL // KRAKENPC ONLINE';
+    }, 940);
+
+    bootSeqTimer = setTimeout(() => {
+      dismissBootScene();
+    }, 1250);
+  }
+
+  // Setup button handlers
+  document.addEventListener('DOMContentLoaded', () => {
+    canvasCleanup = initBootCanvas();
+    startCinematicIntro(false);
+
+    const skipBtn = document.getElementById('boot-skip-btn');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        dismissBootScene();
+      });
+    }
+
+    const soundBtn = document.getElementById('boot-sound-toggle');
+    if (soundBtn) {
+      soundBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        bootSoundEnabled = !bootSoundEnabled;
+        const label = document.getElementById('boot-sound-label');
+        if (label) label.textContent = bootSoundEnabled ? '🔊 SFX ON' : '🔇 SFX OFF';
+        if (bootSoundEnabled) playSciFiBootAudio();
+      });
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        const scene = document.getElementById('kraken-boot-scene');
+        if (scene && !scene.classList.contains('boot-done')) {
+          dismissBootScene();
+        }
+      }
+    });
+
+    document.querySelectorAll('[data-trigger-intro]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        startCinematicIntro(true);
+      });
+    });
+  });
+
   function formatMoney(amount, lang = BOOT.lang) {
     const locale = lang === 'ru' ? 'ru-RU' : lang === 'en' ? 'en-US' : 'uz-UZ';
     const suffix = lang === 'ru' ? ' сум' : lang === 'en' ? ' UZS' : ' so‘m';

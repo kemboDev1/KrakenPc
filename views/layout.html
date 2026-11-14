@@ -26,6 +26,69 @@
   {{{schemaTags}}}
 </head>
 <body>
+  <!-- Cinematic Cyber Intro Scene -->
+  <aside id="kraken-boot-scene" class="boot-scene" aria-label="KrakenPC Cinematic Intro">
+    <canvas id="boot-canvas" class="boot-canvas"></canvas>
+    
+    <!-- Top & Bottom Cinema Letterbox Bars -->
+    <div class="cinema-bar cinema-bar-top"></div>
+    <div class="cinema-bar cinema-bar-bottom"></div>
+
+    <!-- Holographic Scanner Line -->
+    <div class="boot-scanner"></div>
+
+    <!-- Corner Sci-Fi Telemetry -->
+    <div class="boot-hud-corner boot-hud-tl">
+      <span class="hud-tag">SECURE BOOT // v4.2</span>
+      <span class="hud-val">TASHKENT HUB · NODE-01</span>
+    </div>
+    <div class="boot-hud-corner boot-hud-tr">
+      <button type="button" class="boot-sound-btn" id="boot-sound-toggle" aria-label="Audio FX" title="Ovoz">
+        <span id="boot-sound-label">🔊 SFX ON</span>
+      </button>
+      <button type="button" class="boot-skip-btn" id="boot-skip-btn">
+        <span>O‘tkazib yuborish</span>
+        <kbd>ESC</kbd>
+      </button>
+    </div>
+
+    <!-- Center Theatrical Core -->
+    <div class="boot-content">
+      <!-- Animated Reactor Rings & Glowing Kraken Core -->
+      <div class="boot-reactor-wrap">
+        <div class="boot-reactor-ring ring-outer"></div>
+        <div class="boot-reactor-ring ring-mid"></div>
+        <div class="boot-emblem-core">
+          <div class="boot-halo"></div>
+          <img class="boot-emblem" src="/favicon.png" alt="KrakenPC" width="72" height="72">
+        </div>
+      </div>
+
+      <!-- Logotype with Glitch Effect -->
+      <div class="boot-brand">
+        <div class="boot-brand-name">
+          KRAKEN<span class="boot-brand-accent">PC</span>
+        </div>
+        <div class="boot-brand-sub">PERFORMANCE ARCHITECTURE</div>
+      </div>
+
+      <!-- High-Tech Telemetry Loading HUD -->
+      <div class="boot-hud-meter">
+        <div class="boot-meter-label">
+          <span id="boot-telemetry-status">INITIALIZING QUANTUM CORE...</span>
+          <span id="boot-telemetry-pct">0%</span>
+        </div>
+        <div class="boot-track">
+          <div id="boot-progress-bar" class="boot-progress"></div>
+        </div>
+        <div class="boot-stats-grid">
+          <div><span>CORE:</span> <strong>AM5 · DDR5</strong></div>
+          <div><span>DISPLAY:</span> <strong>120 FPS</strong></div>
+          <div><span>STATUS:</span> <strong>OPERATIONAL</strong></div>
+        </div>
+      </div>
+    </div>
+  </aside>
   {{{headerHtml}}}
   <main id="main-content">
     {{{content}}}
