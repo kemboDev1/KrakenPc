@@ -18,6 +18,7 @@ function iconSvg(name, extraClass = '') {
     heart: '<path d="M20.8 8.8c0 5.3-8.8 10.1-8.8 10.1S3.2 14.1 3.2 8.8A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 8.8 2.4Z"/>',
     compare: '<path d="M4 7h15m0 0-3-3m3 3-3 3M20 17H5m0 0 3 3m-3-3 3-3"/>',
     cart: '<path d="M3 4h2l2.1 11.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
     search: '<circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/>',
     home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1v-9.5Z"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
@@ -232,8 +233,19 @@ function pageHeader(active, session) {
     navCart: tr(session, 'navCart'),
     iconCart: iconSvg('cart'),
     cartCount: count,
+    catalogUrl: localizedRoute('/catalog', session.lang),
+    builderUrl: localizedRoute('/builder', session.lang),
+    navBuilder: tr(session, 'navBuilder'),
+    iconGrid: iconSvg('grid'),
+    iconBuilder: iconSvg('processors'),
     navLabel: tr(session, 'navCatalog'),
     homeActiveClass: active === 'home' ? 'active' : '',
+    activeHomeClass: active === 'home' ? 'is-active' : '',
+    activeCatalogClass: ['catalog', 'pcs', 'parts'].includes(active) ? 'is-active' : '',
+    activeBuilderClass: active === 'builder' ? 'is-active' : '',
+    activeFavoritesClass: active === 'favorites' ? 'is-active' : '',
+    activeCompareClass: active === 'compare' ? 'is-active' : '',
+    activeCartClass: active === 'cart' ? 'is-active' : '',
     navLinksHtml: links
       .map(([href, key, on]) => `<a class="${on ? 'active' : ''}" href="${esc(localizedRoute(href, session.lang))}">${esc(tr(session, key))}</a>`)
       .join('')

@@ -92,7 +92,7 @@
   }
 
   async function postJson(url, payload) {
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,7 +101,26 @@
       },
       body: JSON.stringify(payload)
     });
-    const data = await res.json().catch(() => null);
+    let data = await res.json().catch(() => null);
+    if (res.status === 403 && data && data.reload) {
+      if (data.csrf) {
+        BOOT.csrf = data.csrf;
+      } else {
+        const cRes = await fetch('/api/csrf', { headers: { 'Accept': 'application/json' } }).catch(() => null);
+        const cData = await cRes?.json().catch(() => null);
+        if (cData && cData.csrf) BOOT.csrf = cData.csrf;
+      }
+      res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': BOOT.csrf || ''
+        },
+        body: JSON.stringify(payload)
+      });
+      data = await res.json().catch(() => null);
+    }
     if (!res.ok || !data || !data.ok) {
       throw new Error(data?.error || S.errorGeneric || 'Request failed');
     }
@@ -113,7 +132,7 @@
     const next = theme === 'light' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     const themeMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#0b1118' : '#f1f5f6');
+    if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#070a0f' : '#f1f5f6');
     const schemeMeta = document.querySelector('meta[name="color-scheme"]');
     if (schemeMeta) schemeMeta.setAttribute('content', next);
   }
@@ -146,7 +165,11 @@
     }
     if (langSelect) {
       langSelect.addEventListener('change', () => {
-        settingsForm.submit();
+        const chosen = langSelect.value;
+        const currentUrl = new URL(window.location.href);
+        if (chosen === 'uz') currentUrl.searchParams.delete('lang');
+        else currentUrl.searchParams.set('lang', chosen);
+        window.location.href = currentUrl.pathname + currentUrl.search;
       });
     }
   }

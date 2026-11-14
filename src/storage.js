@@ -338,7 +338,7 @@ function writeSessionCookie(req, res, session) {
     shrinkSession(session);
     value = sealSession(session);
   }
-  const secure = PROD || isRequestSecure(req) ? '; Secure' : '';
+  const secure = isRequestSecure(req) ? '; Secure' : '';
   res.setHeader('Set-Cookie', [
     `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}${secure}`,
     `${LEGACY_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`

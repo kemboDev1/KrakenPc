@@ -1,19 +1,80 @@
+<svg style="display:none" aria-hidden="true">
+  <symbol id="kraken-logo-symbol" viewBox="0 0 64 64">
+    <defs>
+      <linearGradient id="sym-kp-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0c141f"/>
+        <stop offset="60%" stop-color="#06090e"/>
+        <stop offset="100%" stop-color="#030508"/>
+      </linearGradient>
+      <linearGradient id="sym-kp-border" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.9"/>
+        <stop offset="45%" stop-color="#4facfe" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#7f00ff" stop-opacity="0.7"/>
+      </linearGradient>
+      <linearGradient id="sym-kp-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#73fff7"/>
+        <stop offset="40%" stop-color="#00f2fe"/>
+        <stop offset="100%" stop-color="#0072ff"/>
+      </linearGradient>
+      <linearGradient id="sym-kp-core" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="30%" stop-color="#73fff7"/>
+        <stop offset="100%" stop-color="#00c6ff"/>
+      </linearGradient>
+      <linearGradient id="sym-kp-neon" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#00f2fe"/>
+        <stop offset="100%" stop-color="#38ef7d"/>
+      </linearGradient>
+      <radialGradient id="sym-kp-glow" cx="50%" cy="45%" r="50%">
+        <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="#00f2fe" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect x="2.5" y="2.5" width="59" height="59" rx="15" fill="url(#sym-kp-bg)" stroke="url(#sym-kp-border)" stroke-width="1.6"/>
+    <circle cx="32" cy="30" r="24" fill="url(#sym-kp-glow)"/>
+    <g>
+      <path d="M32 9L36.5 17.5L34 23H30L27.5 17.5L32 9Z" fill="url(#sym-kp-core)"/>
+      <polygon points="32,25 36.5,31 32,37 27.5,31" fill="#ffffff"/>
+      <polygon points="32,27 35,31 32,35 29,31" fill="url(#sym-kp-neon)"/>
+      <path d="M26 18C20 18 13 22 11 29C10 32.5 12 34 14.5 32C17 30 20 27 24.5 27L27 31L23 35C18 36 13 39 12 43.5C11 47 14 47.5 16.5 45.5C20 42.5 24 39 29 38L30 43L27 50C25 53.5 28 54 30.5 52C32 50.5 33 46 32 41L32 37" fill="none" stroke="url(#sym-kp-cyan)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M38 18C44 18 51 22 53 29C54 32.5 52 34 49.5 32C47 30 44 27 39.5 27L37 31L41 35C46 36 51 39 52 43.5C53 47 50 47.5 47.5 45.5C44 42.5 40 39 35 38L34 43L37 50C39 53.5 36 54 33.5 52C32 50.5 31 46 32 41L32 37" fill="none" stroke="url(#sym-kp-cyan)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="13" cy="27" r="1.5" fill="#73fff7"/>
+      <circle cx="51" cy="27" r="1.5" fill="#73fff7"/>
+      <circle cx="14" cy="41" r="1.4" fill="#38ef7d"/>
+      <circle cx="50" cy="41" r="1.4" fill="#38ef7d"/>
+      <circle cx="28" cy="51.5" r="1.2" fill="#73fff7"/>
+      <circle cx="36" cy="51.5" r="1.2" fill="#73fff7"/>
+    </g>
+  </symbol>
+</svg>
+
 <a class="skip-link" href="#main-content">{{skipText}}</a>
 <div class="announcement">
   <div class="container announcement-inner">
-    <span><span class="live-dot"></span>{{region}}</span>
+    <div class="announcement-left">
+      <span class="live-dot pulse"></span>
+      <span class="announcement-text">{{region}}</span>
+    </div>
     <form class="preferences" action="/settings" method="get" data-settings-form>
-      <label class="sr-only" for="language">{{langLabel}}</label>
-      <select id="language" name="lang" aria-label="{{langLabel}}">
-        <option value="uz" {{selUz}}>UZ</option>
-        <option value="ru" {{selRu}}>RU</option>
-        <option value="en" {{selEn}}>EN</option>
-      </select>
-      <label class="sr-only" for="theme">{{themeLabel}}</label>
-      <select id="theme" name="theme" aria-label="{{themeLabel}}">
-        <option value="dark" {{selDark}}>{{themeDark}}</option>
-        <option value="light" {{selLight}}>{{themeLight}}</option>
-      </select>
+      <div class="pref-group">
+        <label class="sr-only" for="language">{{langLabel}}</label>
+        <div class="custom-select-wrap">
+          <select id="language" name="lang" aria-label="{{langLabel}}">
+            <option value="uz" {{selUz}}>UZ</option>
+            <option value="ru" {{selRu}}>RU</option>
+            <option value="en" {{selEn}}>EN</option>
+          </select>
+        </div>
+      </div>
+      <div class="pref-group">
+        <label class="sr-only" for="theme">{{themeLabel}}</label>
+        <div class="custom-select-wrap theme-select-wrap">
+          <select id="theme" name="theme" aria-label="{{themeLabel}}">
+            <option value="dark" {{selDark}}>{{themeDark}}</option>
+            <option value="light" {{selLight}}>{{themeLight}}</option>
+          </select>
+        </div>
+      </div>
       <button type="button" class="theme-toggle-btn" data-theme-toggle aria-label="{{themeToggleLabel}}" title="{{themeToggleLabel}}">
         <span class="theme-icon-sun">{{{iconSun}}}</span>
         <span class="theme-icon-moon">{{{iconMoon}}}</span>
@@ -23,35 +84,46 @@
     </form>
   </div>
 </div>
+
 <header class="site-header">
   <div class="container header-main">
     <a href="{{homeUrl}}" class="brand" aria-label="KrakenPC — {{navHome}}">
-      <img class="brand-mark" src="/favicon.png" alt="" width="42" height="42" decoding="async" fetchpriority="high">
-      <span>KRAKEN<span class="brand-accent">PC</span><small>PERFORMANCE, BUILT RIGHT</small></span>
+      <div class="brand-mark-wrap">
+        <img class="brand-mark" src="/favicon.png" alt="" width="42" height="42" decoding="async" fetchpriority="high">
+      </div>
+      <div class="brand-text">
+        <span class="brand-logotype">KRAKEN<span class="brand-accent">PC</span></span>
+        <small class="brand-tagline">PERFORMANCE, BUILT RIGHT</small>
+      </div>
     </a>
+
     <form class="search-form" action="/catalog" method="get" role="search">
-      {{{iconSearch}}}
+      <span class="search-icon">{{{iconSearch}}}</span>
       <input type="search" name="q" placeholder="{{searchPlaceholder}}" aria-label="{{searchPlaceholder}}" maxlength="80">
       <input type="hidden" name="lang" value="{{lang}}">
-      <button type="button" class="search-kbd" data-open-palette aria-label="{{paletteTitle}}" title="{{shortcutTip}}">Ctrl K</button>
-      <button type="submit">{{searchAction}}</button>
+      <button type="button" class="search-kbd" data-open-palette aria-label="{{paletteTitle}}" title="{{shortcutTip}}"><span class="kbd-mod">Ctrl</span> K</button>
+      <button type="submit" class="search-submit">{{searchAction}}</button>
     </form>
+
     <div class="header-tools">
-      <a class="header-tool" href="{{compareUrl}}" aria-label="{{navCompare}}">
-        <span class="tool-icon">{{{iconCompare}}}</span>
-        <span>{{navCompare}} <b data-compare-count>{{compareCountDisplay}}</b></span>
+      <a class="header-tool tool-compare" href="{{compareUrl}}" aria-label="{{navCompare}}">
+        <span class="tool-icon-wrap">{{{iconCompare}}}</span>
+        <span class="tool-text">{{navCompare}}</span>
+        <b class="tool-badge" data-compare-count>{{compareCountDisplay}}</b>
       </a>
-      <a class="header-tool" href="{{favoritesUrl}}" aria-label="{{navFavorites}}">
-        <span class="tool-icon">{{{iconHeart}}}</span>
-        <span>{{navFavorites}} <b data-fav-count>{{favCountDisplay}}</b></span>
+      <a class="header-tool tool-fav" href="{{favoritesUrl}}" aria-label="{{navFavorites}}">
+        <span class="tool-icon-wrap">{{{iconHeart}}}</span>
+        <span class="tool-text">{{navFavorites}}</span>
+        <b class="tool-badge" data-fav-count>{{favCountDisplay}}</b>
       </a>
       <a class="cart-tool" href="{{cartUrl}}" aria-label="{{navCart}}">
-        <span class="tool-icon">{{{iconCart}}}</span>
+        <span class="tool-icon-wrap">{{{iconCart}}}</span>
         <span class="cart-label">{{navCart}}</span>
         <b class="cart-count" data-cart-count>{{cartCount}}</b>
       </a>
     </div>
   </div>
+
   <nav class="main-nav" aria-label="{{navLabel}}">
     <div class="container nav-inner">
       <a class="nav-home {{homeActiveClass}}" href="{{homeUrl}}">{{{iconHome}}} <span>{{navHome}}</span></a>
@@ -60,3 +132,32 @@
     </div>
   </nav>
 </header>
+
+<nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+  <a class="mobile-nav-item {{activeHomeClass}}" href="{{homeUrl}}">
+    <span class="mobile-nav-icon">{{{iconHome}}}</span>
+    <span class="mobile-nav-label">{{navHome}}</span>
+  </a>
+  <a class="mobile-nav-item {{activeCatalogClass}}" href="{{catalogUrl}}">
+    <span class="mobile-nav-icon">{{{iconGrid}}}</span>
+    <span class="mobile-nav-label">{{navCatalog}}</span>
+  </a>
+  <a class="mobile-nav-item {{activeBuilderClass}}" href="{{builderUrl}}">
+    <span class="mobile-nav-icon">{{{iconBuilder}}}</span>
+    <span class="mobile-nav-label">{{navBuilder}}</span>
+  </a>
+  <a class="mobile-nav-item {{activeFavoritesClass}}" href="{{favoritesUrl}}">
+    <span class="mobile-nav-icon">
+      {{{iconHeart}}}
+      <b class="mobile-badge" data-fav-count>{{favCountDisplay}}</b>
+    </span>
+    <span class="mobile-nav-label">{{navFavorites}}</span>
+  </a>
+  <a class="mobile-nav-item {{activeCartClass}}" href="{{cartUrl}}">
+    <span class="mobile-nav-icon">
+      {{{iconCart}}}
+      <b class="mobile-badge" data-cart-count>{{cartCount}}</b>
+    </span>
+    <span class="mobile-nav-label">{{navCart}}</span>
+  </a>
+</nav>

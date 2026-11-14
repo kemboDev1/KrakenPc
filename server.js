@@ -7,7 +7,7 @@ const zlib = require('node:zlib');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   ROOT, ON_VERCEL, PORT, HOST, PUBLIC_ORIGIN, PROD,
-  SESSION_KEY, STATUSES, BUILD_FIELDS, LEGACY_SLUG_REDIRECTS,
+  SESSION_KEY, STATUSES, BUILD_FIELDS, LEGACY_SLUG_REDIRECTS, LEGACY_PRODUCT_IDS,
   esc, localized, formatPrice, requestOrigin, localizedRoute, localPath
 } = u(require('./src/config'));
 const { tr } = u(require('./src/i18n'));
@@ -362,7 +362,35 @@ function handleStaticGet(req, res, pathname, url) {
   return false;
 }
 
+const COMMON_REDIRECTS = {
+  '/products': '/catalog',
+  '/pcs': '/catalog?type=pc',
+  '/parts': '/catalog?type=part',
+  '/home': '/',
+  '/shop': '/catalog',
+  '/favourite': '/favorites',
+  '/favorite': '/favorites',
+  '/wishlist': '/favorites',
+  '/comparison': '/compare',
+  '/pc-builder': '/builder',
+  '/build': '/builder',
+  '/order': '/cart',
+  '/orders': '/cart',
+  '/login': '/admin',
+  '/signin': '/admin'
+};
+
 async function handleGet(req, res, session, pathname, url) {
+  if (COMMON_REDIRECTS[pathname]) {
+    res.statusCode = 301;
+    res.setHeader('Location', localPath(COMMON_REDIRECTS[pathname] + url.search));
+    return res.end();
+  }
+
+  if (pathname === '/api/csrf') {
+    return sendJson(res, { ok: true, csrf: session.csrf });
+  }
+
   if (['/favorites', '/compare', '/cart', '/checkout', '/success', '/admin', '/admin/export.csv', '/admin/export.json'].includes(pathname)) {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
@@ -420,16 +448,34 @@ async function handleGet(req, res, session, pathname, url) {
     if (['uz', 'ru', 'en'].includes(lang)) session.lang = lang;
     const theme = url.searchParams.get('theme');
     if (['light', 'dark'].includes(theme)) session.theme = theme;
-    return redirect(res, localPath(url.searchParams.get('back') || '/'));
+    const rawBack = url.searchParams.get('back') || '/';
+    const dest = new URL(localPath(rawBack), 'http://local');
+    if (dest.searchParams.has('lang')) {
+      if (session.lang === 'uz') dest.searchParams.delete('lang');
+      else dest.searchParams.set('lang', session.lang);
+      return redirect(res, dest.pathname + dest.search);
+    }
+    return redirect(res, localPath(rawBack));
   }
   if (pathname.startsWith('/product/')) {
-    const slug = pathname.slice('/product/'.length);
+    const rawKey = pathname.slice('/product/'.length);
+    const slug = decodeURIComponent(rawKey);
     if (LEGACY_SLUG_REDIRECTS[slug]) {
       res.statusCode = 301;
       res.setHeader('Location', `/product/${encodeURIComponent(LEGACY_SLUG_REDIRECTS[slug])}${url.search}`);
       return res.end();
     }
-    return productPage(req, res, session, productBySlug(slug));
+    let product = productBySlug(slug);
+    if (!product) {
+      const resolvedId = LEGACY_PRODUCT_IDS[slug] || slug;
+      product = productById(resolvedId);
+      if (product) {
+        res.statusCode = 301;
+        res.setHeader('Location', `/product/${encodeURIComponent(product.slug)}${url.search}`);
+        return res.end();
+      }
+    }
+    return productPage(req, res, session, product);
   }
   return pageNotFound(req, res, session);
 }
@@ -527,7 +573,7 @@ async function handleApiPost(req, res, session, pathname) {
 async function handlePost(req, res, session, pathname) {
   const isApi = pathname.startsWith('/api/');
   if (!validCsrf(req, session)) {
-    if (isApi) return sendJson(res, { ok: false, error: tr(session, 'csrfError'), reload: true }, 403);
+    if (isApi) return sendJson(res, { ok: false, error: tr(session, 'csrfError'), reload: true, csrf: session.csrf }, 403);
     // A stale/absent session must never leave the visitor on an "expired" page:
     // bounce them back to the page they came from with a fresh session cookie.
     return redirect(res, localPath((req.body && req.body.back) || '/'));
