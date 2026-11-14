@@ -72,45 +72,62 @@
     }, 3400);
   }
 
+  function startProgress() {
+    let bar = document.getElementById('top-loader');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'top-loader';
+      document.body.prepend(bar);
+    }
+    bar.style.width = '35%';
+    bar.style.opacity = '1';
+    setTimeout(() => {
+      if (bar.style.opacity === '1') bar.style.width = '75%';
+    }, 180);
+  }
+
+  function finishProgress() {
+    const bar = document.getElementById('top-loader');
+    if (!bar) return;
+    bar.style.width = '100%';
+    setTimeout(() => {
+      bar.style.opacity = '0';
+      setTimeout(() => { bar.style.width = '0%'; }, 250);
+    }, 160);
+  }
+
   function updateHeaderCounts(counts) {
     if (!counts) return;
     if (typeof counts.cart === 'number') {
       document.querySelectorAll('[data-cart-count]').forEach(el => {
         el.textContent = String(counts.cart);
+        el.classList.remove('badge-pop');
+        void el.offsetWidth;
+        el.classList.add('badge-pop');
       });
     }
     if (typeof counts.favorites === 'number') {
       document.querySelectorAll('[data-fav-count]').forEach(el => {
         el.textContent = counts.favorites > 0 ? String(counts.favorites) : '';
+        el.classList.remove('badge-pop');
+        void el.offsetWidth;
+        el.classList.add('badge-pop');
       });
     }
     if (typeof counts.compare === 'number') {
       document.querySelectorAll('[data-compare-count]').forEach(el => {
         el.textContent = counts.compare > 0 ? String(counts.compare) : '';
+        el.classList.remove('badge-pop');
+        void el.offsetWidth;
+        el.classList.add('badge-pop');
       });
     }
   }
 
   async function postJson(url, payload) {
-    let res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-CSRF-Token': BOOT.csrf || ''
-      },
-      body: JSON.stringify(payload)
-    });
-    let data = await res.json().catch(() => null);
-    if (res.status === 403 && data && data.reload) {
-      if (data.csrf) {
-        BOOT.csrf = data.csrf;
-      } else {
-        const cRes = await fetch('/api/csrf', { headers: { 'Accept': 'application/json' } }).catch(() => null);
-        const cData = await cRes?.json().catch(() => null);
-        if (cData && cData.csrf) BOOT.csrf = cData.csrf;
-      }
-      res = await fetch(url, {
+    startProgress();
+    try {
+      let res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,13 +136,34 @@
         },
         body: JSON.stringify(payload)
       });
-      data = await res.json().catch(() => null);
+      let data = await res.json().catch(() => null);
+      if (res.status === 403 && data && data.reload) {
+        if (data.csrf) {
+          BOOT.csrf = data.csrf;
+        } else {
+          const cRes = await fetch('/api/csrf', { headers: { 'Accept': 'application/json' } }).catch(() => null);
+          const cData = await cRes?.json().catch(() => null);
+          if (cData && cData.csrf) BOOT.csrf = cData.csrf;
+        }
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-Token': BOOT.csrf || ''
+          },
+          body: JSON.stringify(payload)
+        });
+        data = await res.json().catch(() => null);
+      }
+      if (!res.ok || !data || !data.ok) {
+        throw new Error(data?.error || S.errorGeneric || 'Request failed');
+      }
+      if (data.csrf) BOOT.csrf = data.csrf;
+      return data;
+    } finally {
+      finishProgress();
     }
-    if (!res.ok || !data || !data.ok) {
-      throw new Error(data?.error || S.errorGeneric || 'Request failed');
-    }
-    if (data.csrf) BOOT.csrf = data.csrf;
-    return data;
   }
 
   function applyTheme(theme) {
@@ -244,16 +282,39 @@
     const productId = form.dataset.productId || form.querySelector('input[name="id"]')?.value || '';
     const submitBtn = form.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
+    let keepDisabled = false;
 
     try {
       if (kind === 'cart-add') {
-        const data = await postJson('/api/cart/add', { id: productId });
-        updateHeaderCounts(data.counts);
-        showToast(data.capped ? S.toastCartUpdated : (S.toastCartAdded || 'Added'), {
-          actionHref: '/cart',
-          actionLabel: S.openCart || 'Cart',
-          tone: 'success'
-        });
+        const originalHtml = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) submitBtn.classList.add('is-loading');
+        try {
+          const data = await postJson('/api/cart/add', { id: productId });
+          updateHeaderCounts(data.counts);
+          if (submitBtn) {
+            submitBtn.classList.remove('is-loading');
+            submitBtn.classList.add('is-success');
+            const successText = (BOOT.lang === 'uz' ? 'Qo‘shildi ✓' : (BOOT.lang === 'ru' ? 'Добавлено ✓' : 'Added ✓'));
+            submitBtn.innerHTML = `<span>${successText}</span>`;
+            keepDisabled = true;
+            setTimeout(() => {
+              submitBtn.classList.remove('is-success');
+              submitBtn.innerHTML = originalHtml;
+              submitBtn.disabled = false;
+            }, 1200);
+          }
+          showToast(data.capped ? S.toastCartUpdated : (S.toastCartAdded || 'Added'), {
+            actionHref: '/cart',
+            actionLabel: S.openCart || 'Cart',
+            tone: 'success'
+          });
+        } catch (err) {
+          if (submitBtn) {
+            submitBtn.classList.remove('is-loading');
+            submitBtn.innerHTML = originalHtml;
+          }
+          throw err;
+        }
       } else if (kind === 'cart-update') {
         const qtyInput = form.querySelector('input[name="qty"]');
         const qty = Number(qtyInput?.value || 0);
@@ -310,7 +371,7 @@
     } catch (err) {
       showToast(err.message || S.errorGeneric, { tone: 'error' });
     } finally {
-      if (submitBtn) submitBtn.disabled = false;
+      if (submitBtn && !keepDisabled) submitBtn.disabled = false;
     }
   });
 
@@ -502,7 +563,22 @@
     }
     if (event.target.classList.contains('modal-backdrop')) {
       closeModal(event.target);
+      return;
     }
+
+    const navLink = event.target.closest('a[href]');
+    if (navLink) {
+      const href = navLink.getAttribute('href');
+      if (href && !href.startsWith('#') && !href.startsWith('mailto:') && !href.startsWith('tel:') && navLink.target !== '_blank' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        if (href.startsWith('/') || href.startsWith(window.location.origin)) {
+          startProgress();
+        }
+      }
+    }
+  });
+
+  window.addEventListener('pageshow', () => {
+    finishProgress();
   });
 
   document.addEventListener('keydown', event => {
