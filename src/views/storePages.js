@@ -11,7 +11,7 @@ const {
 } = u(require('../builder'));
 const {
   csrfField, iconSvg, productImageUrl, productImage, priceMarkup, tagMarkup, stockTag,
-  cardGrid, cartTotals, orderSummary, renderPage
+  cardGrid, cartTotals, orderSummary, renderPage, imagePreload
 } = u(require('./layout'));
 
 function productSchema(product, session, req) {
@@ -50,6 +50,17 @@ function breadcrumbSchema(items, session, req) {
   };
 }
 
+function flowSteps(session, current) {
+  const steps = [['navCart', 'cart'], ['flowDetails', 'details'], ['flowDone', 'done']];
+  const order = ['cart', 'details', 'done'];
+  return steps
+    .map(([key, id], i) => {
+      const state = order.indexOf(id) < order.indexOf(current) ? 'is-done' : id === current ? 'is-current' : '';
+      return `<li class="flow-step ${state}" ${id === current ? 'aria-current="step"' : ''}><span>${i + 1}</span>${esc(tr(session, key))}</li>`;
+    })
+    .join('');
+}
+
 function redirectResponse(res, to = '/') {
   res.statusCode = 303;
   res.setHeader('Location', to);
@@ -61,6 +72,8 @@ function forbiddenPage(req, res, session, message = '') {
   const content = renderTemplate('error', {
     iconAlert: iconSvg('alert'),
     message: msg,
+    homeUrl: localizedRoute('/', session.lang),
+    navCatalog: tr(session, 'navCatalog'),
     returnHome: tr(session, 'returnHome')
   });
   renderPage(req, res, session, {
@@ -100,13 +113,25 @@ function homePage(req, res, session) {
     '@type': 'Organization',
     name: 'KrakenPC',
     url: siteUrl,
-    ...(origin ? { logo: `${origin}/favicon.png` } : {})
+    ...(origin ? { logo: `${origin}/icon-512.png` } : {})
   };
 
   const warrantySummary = `12 ${session.lang === 'en' ? 'month' : session.lang === 'ru' ? 'мес.' : 'oy'} · ${session.lang === 'en' ? 'service cover' : session.lang === 'ru' ? 'сервиса' : 'servis kafolati'}`;
-  const categoryLinksHtml = CATEGORIES
-    .filter(cat => cat !== 'pcs')
-    .map(cat => `<a href="/catalog?cat=${encodeURIComponent(cat)}"><span class="category-icon">${iconSvg(cat)}</span><span>${esc(tr(session, cat))}</span>${iconSvg('arrowUpRight')}</a>`)
+  const categoryList = CATEGORIES.filter(cat => cat !== 'pcs');
+  const categoryLinksHtml = categoryList
+    .map((cat, i) => {
+      const n = store.products.filter(p => p.category === cat).length;
+      return `<a class="category-card" data-reveal data-spotlight href="${esc(localizedRoute(`/catalog?cat=${encodeURIComponent(cat)}`, session.lang))}"><span class="category-icon">${iconSvg(cat)}</span><span class="category-name">${esc(tr(session, cat))}</span><small>${n}</small>${iconSvg('arrowUpRight')}</a>`;
+    })
+    .join('');
+
+  const heroChipsHtml = (hero?.specs || []).slice(0, 3)
+    .map((spec, i) => `<span class="hero-chip chip-${i + 1}">${iconSvg(['processors', 'graphics', 'memory'][i])}<span>${esc(spec)}</span></span>`)
+    .join('');
+  const brands = [...new Set(store.products.flatMap(p => String(p.brand || '').split('/').map(b => b.trim())).filter(Boolean))];
+  const brandsHtml = brands.map(name => `<li>${esc(name)}</li>`).join('');
+  const faqHtml = [1, 2, 3, 4]
+    .map(n => `<details class="faq-item"><summary>${esc(tr(session, `faq${n}q`))}${iconSvg('plus')}</summary><p>${esc(tr(session, `faq${n}a`))}</p></details>`)
     .join('');
 
   const content = renderTemplate('index', {
@@ -119,9 +144,12 @@ function homePage(req, res, session) {
     warrantySummary,
     heroHref: hero ? `/product/${encodeURIComponent(hero.slug)}` : '/catalog?type=pc',
     heroImageHtml: hero ? productImage(hero, session, { hero: true, lazy: false }) : '',
+    heroChipsHtml,
     heroBadge: tr(session, 'heroBadge'),
     heroBadgelabel: tr(session, 'heroBadgelabel'),
     heroPriceFormatted: hero ? formatPrice(hero.price, session.lang) : '',
+    brandsTitle: tr(session, 'brandsTitle'),
+    brandsHtml,
     storeLabel: tr(session, 'store'),
     benefitBuild: tr(session, 'benefitBuild'),
     benefitBuildText: tr(session, 'benefitBuildText'),
@@ -129,6 +157,13 @@ function homePage(req, res, session) {
     benefitWarrantyText: tr(session, 'benefitWarrantyText'),
     benefitDelivery: tr(session, 'benefitDelivery'),
     benefitDeliveryText: tr(session, 'benefitDeliveryText'),
+    statWarranty: tr(session, 'statWarranty'),
+    statProducts: tr(session, 'statProducts'),
+    statCategories: tr(session, 'statCategories'),
+    statFree: tr(session, 'statFree'),
+    mln: tr(session, 'mln'),
+    productCount: String(store.products.length),
+    categoryCount: String(categoryList.length + 1),
     sectionPicks: tr(session, 'sectionPicks'),
     pcsLabel: tr(session, 'pcs'),
     picksText: tr(session, 'picksText'),
@@ -138,19 +173,34 @@ function homePage(req, res, session) {
     partsLabel: tr(session, 'parts'),
     popularText: tr(session, 'popularText'),
     allParts: tr(session, 'allParts'),
-    popularGridHtml: cardGrid(popular, session, { compact: true, lazy: false }),
+    popularGridHtml: cardGrid(popular, session, { compact: true }),
     sectionService: tr(session, 'sectionService'),
-    serviceImageHtml: servicePc ? productImage(servicePc, session, { hero: false, lazy: false }) : '',
+    serviceImageHtml: servicePc ? productImage(servicePc, session, { hero: false, lazy: true, sizes: '(min-width: 960px) 40vw, 92vw' }) : '',
     serviceTitle: tr(session, 'serviceTitle'),
     serviceText: tr(session, 'serviceBody'),
     serviceButton: tr(session, 'serviceButton'),
+    checkCompat: tr(session, 'checkCompat'),
+    checkCables: tr(session, 'checkCables'),
+    checkTest: tr(session, 'checkTest'),
     navCatalog: tr(session, 'navCatalog'),
     categoryLinksHtml,
+    processEyebrow: tr(session, 'processEyebrow'),
+    processTitle: tr(session, 'processTitle'),
+    step1: tr(session, 'step1'), step1Text: tr(session, 'step1Text'),
+    step2: tr(session, 'step2'), step2Text: tr(session, 'step2Text'),
+    step3: tr(session, 'step3'), step3Text: tr(session, 'step3Text'),
+    step4: tr(session, 'step4'), step4Text: tr(session, 'step4Text'),
+    faqTitle: tr(session, 'faqTitle'),
+    faqHtml,
+    ctaTitle: tr(session, 'ctaTitle'),
+    ctaText: tr(session, 'ctaText'),
     iconArrow: iconSvg('arrowUpRight'),
     iconCheck: iconSvg('check'),
     iconCpu: iconSvg('processors'),
     iconShield: iconSvg('shield'),
-    iconTruck: iconSvg('truck')
+    iconTruck: iconSvg('truck'),
+    iconCursor: iconSvg('cursor'),
+    iconWrench: iconSvg('wrench')
   });
 
   renderPage(req, res, session, {
@@ -160,7 +210,7 @@ function homePage(req, res, session) {
     active: 'home',
     canonicalRoute: '/',
     structured: [websiteSchema, orgSchema],
-    ogImage: hero ? productImageUrl(hero) : ''
+    preload: imagePreload(hero, { hero: true })
   });
 }
 
@@ -225,6 +275,11 @@ function catalogPage(req, res, session, url) {
     foundCount: String(products.length),
     productsFoundLabel: tr(session, 'productsFound'),
     categoryTitle: tr(session, 'category'),
+    iconFilter: iconSvg('filter'),
+    filtersLabel: tr(session, 'filtersLabel'),
+    categoryChipsHtml: [['', tr(session, 'all')], ...CATEGORIES.map(c => [c, tr(session, c)])]
+      .map(([c, label]) => `<a class="chip ${c === category ? 'is-active' : ''}" href="${esc(localizedRoute(`/catalog${c ? `?cat=${c}` : ''}`, session.lang))}" ${c === category ? 'aria-current="true"' : ''}>${esc(label)}</a>`)
+      .join(''),
     lang: session.lang,
     typeHiddenInput: type ? `<input type="hidden" name="type" value="${esc(type)}">` : '',
     searchLabel: tr(session, 'searchLabel'),
@@ -296,8 +351,15 @@ function productPage(req, res, session, product) {
     : '';
 
   const content = renderTemplate('product', {
+    homeUrl: localizedRoute('/', session.lang),
+    navHome: tr(session, 'navHome'),
     categoryEncoded: encodeURIComponent(product.category),
     navCatalog: tr(session, 'navCatalog'),
+    benefitWarranty: tr(session, 'benefitWarranty'),
+    iconShield: iconSvg('shield'),
+    iconTruck: iconSvg('truck'),
+    iconCard: iconSvg('card'),
+    iconCart: iconSvg('cart'),
     iconChevron: iconSvg('chevronRight'),
     iconCheck: iconSvg('check'),
     categoryLabel: tr(session, product.category),
@@ -342,6 +404,7 @@ function productPage(req, res, session, product) {
     canonicalRoute: backUrl,
     structured: [productSchema(product, session, req), crumbs],
     ogImage: productImageUrl(product),
+    preload: imagePreload(product, { hero: false }),
     ogType: 'product'
   });
 }
@@ -456,6 +519,7 @@ function cartPage(req, res, session) {
   }
 
   const content = renderTemplate('cart', {
+    flowStepsHtml: flowSteps(session, 'cart'),
     navCart: tr(session, 'navCart'),
     cartTitle: tr(session, 'cartTitle'),
     cartBodyHtml
@@ -465,6 +529,7 @@ function cartPage(req, res, session) {
     title: tr(session, 'cartTitle'),
     description: tr(session, 'cartHint'),
     content,
+    active: 'cart',
     noindex: true
   });
 }
@@ -474,6 +539,7 @@ function checkoutPage(req, res, session, { values = {}, fieldErrors = {}, formEr
   if (!totals.items.length) return redirectResponse(res, '/cart');
 
   const content = renderTemplate('checkout', {
+    flowStepsHtml: flowSteps(session, 'details'),
     navCart: tr(session, 'navCart'),
     checkoutTitle: tr(session, 'checkoutTitle'),
     checkoutInfo: tr(session, 'checkoutInfo'),
@@ -507,6 +573,7 @@ function checkoutPage(req, res, session, { values = {}, fieldErrors = {}, formEr
     title: tr(session, 'checkoutTitle'),
     description: tr(session, 'checkoutInfo'),
     content,
+    active: 'cart',
     noindex: true,
     statusCode
   });
@@ -630,23 +697,28 @@ function successPage(req, res, session, url) {
   const id = String(url.searchParams.get('id') || '').slice(0, 32);
   if (!id) return redirectResponse(res, '/');
   const order = store.orders.find(o => o.id === id);
-  if (!order) return redirectResponse(res, '/');
+  // On serverless hosts the order may have been saved by a different instance;
+  // it has still been stored and reported, so show a confirmation rather than bouncing home.
+  if (!order && !/^KPC-\d{8}-[0-9A-F]{12}$/.test(id)) return redirectResponse(res, '/');
 
-  const itemsHtml = order.items
-    .map(item => `<div class="success-item"><span>${esc(item.name)} × ${item.qty}</span><strong>${esc(formatPrice(item.price * item.qty, session.lang))}</strong></div>`)
-    .join('');
+  const itemsHtml = order
+    ? order.items
+      .map(item => `<div class="success-item"><span>${esc(item.name)} × ${item.qty}</span><strong>${esc(formatPrice(item.price * item.qty, session.lang))}</strong></div>`)
+      .join('')
+    : '';
+  const totalHtml = order
+    ? `<div class="success-item success-total"><span>${esc(tr(session, 'total'))}</span><strong>${esc(formatPrice(order.total, session.lang))}</strong></div>`
+    : '';
 
   const content = renderTemplate('success', {
-    iconCheck: iconSvg('check'),
     iconArrow: iconSvg('arrowUpRight'),
     orderSuccessTitle: tr(session, 'orderSuccessTitle'),
     orderSuccessText: tr(session, 'orderSuccessText'),
     orderNumberLabel: tr(session, 'orderNumber'),
-    orderId: order.id,
+    orderId: id,
     itemsHtml,
-    totalLabel: tr(session, 'total'),
-    totalFormatted: formatPrice(order.total, session.lang),
-    telegramState: order.telegramStatus === 'sent' ? tr(session, 'orderTelegramSent') : tr(session, 'orderTelegramPending'),
+    totalHtml,
+    telegramState: order && order.telegramStatus === 'sent' ? tr(session, 'orderTelegramSent') : tr(session, 'orderTelegramPending'),
     returnHomeLabel: tr(session, 'returnHome')
   });
 
@@ -660,14 +732,19 @@ function successPage(req, res, session, url) {
 
 function pageNotFound(req, res, session) {
   const content = renderTemplate('404', {
-    pageNotFound: tr(session, 'pageNotFound'),
-    productNotFound: tr(session, 'productNotFound'),
+    notFoundTitle: tr(session, 'notFoundTitle'),
+    notFoundText: tr(session, 'notFoundText'),
+    iconSearch: iconSvg('search'),
+    searchPlaceholder: tr(session, 'search'),
+    searchAction: tr(session, 'searchAction'),
+    homeUrl: localizedRoute('/', session.lang),
+    returnHome: tr(session, 'returnHome'),
     navCatalog: tr(session, 'navCatalog')
   });
 
   renderPage(req, res, session, {
-    title: tr(session, 'pageNotFound'),
-    description: tr(session, 'productNotFound'),
+    title: tr(session, 'notFoundTitle'),
+    description: tr(session, 'notFoundText'),
     content,
     noindex: true,
     statusCode: 404

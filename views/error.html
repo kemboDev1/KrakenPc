@@ -1,6 +1,8 @@
 <section class="container simple-state">
   <span class="state-icon">{{{iconAlert}}}</span>
   <h1>{{message}}</h1>
-  <a class="button button-primary" href="/">{{returnHome}}</a>
+  <div class="state-actions">
+    <a class="button button-primary" href="{{homeUrl}}">{{returnHome}}</a>
+    <a class="button button-ghost" href="/catalog">{{navCatalog}}</a>
+  </div>
 </section>
-

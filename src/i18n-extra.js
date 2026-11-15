@@ -1,0 +1,65 @@
+/* Texts added with the 2026 redesign. Merged into I18N by src/i18n.js.
+   Only facts the store already states (12-month service cover, free delivery
+   from 1 000 000 so‘m, 30 000 so‘m otherwise, cash or card, phone confirmation). */
+module.exports = {
+  uz: {
+    navMenu: 'Menyu', mln: 'mln',
+    brandsTitle: 'Katalogdagi brendlar',
+    statWarranty: 'oy servis kafolati', statProducts: 'ta mahsulot', statCategories: 'ta turkum', statFree: 'so‘mdan bepul yetkazish',
+    checkCompat: 'Soket, DDR va quvvat manbai mosligi tekshiriladi', checkCables: 'Kabellar tartibli yig‘iladi', checkTest: 'Yakuniy yuklama testi o‘tkaziladi',
+    processEyebrow: 'Qanday ishlaymiz', processTitle: 'Tanlovdan eshigingizgacha',
+    step1: 'Tanlaysiz', step1Text: 'Tayyor PC’ni tanlang yoki yig‘mani o‘zingiz tuzing.',
+    step2: 'Tekshiramiz', step2Text: 'Qismlarning o‘zaro mosligi va quvvat zaxirasi tekshiriladi.',
+    step3: 'Yig‘amiz va sinaymiz', step3Text: 'Kabellar tartiblanadi, tizim yuklama ostida sinovdan o‘tadi.',
+    step4: 'Yetkazamiz', step4Text: 'Operator telefon orqali tasdiqlaydi, O‘zbekiston bo‘ylab yetkazamiz.',
+    faqTitle: 'Ko‘p so‘raladigan savollar',
+    faq1q: 'Buyurtmani qanday tasdiqlaysiz?', faq1a: 'Buyurtma yuborilgach, operatorimiz telefon orqali bog‘lanib, tafsilotlarni kelishadi.',
+    faq2q: 'Yetkazib berish qancha turadi?', faq2a: '1 000 000 so‘mdan yuqori buyurtmalarga yetkazish bepul, undan pastlariga 30 000 so‘m.',
+    faq3q: 'Qanday to‘lash mumkin?', faq3a: 'Naqd yoki karta orqali to‘lash mumkin.',
+    faq4q: 'Kafolat bormi?', faq4a: 'Ha, har bir yig‘maga 12 oy servis kafolati beriladi.',
+    ctaTitle: 'Orzuingizdagi PC’ni birga yig‘amiz', ctaText: 'Byudjet va maqsadni tanlang, mosligini biz tekshiramiz.',
+    notFoundTitle: 'Bu sahifa topilmadi', notFoundText: 'Manzil noto‘g‘ri yoki sahifa ko‘chirilgan bo‘lishi mumkin. Qidirib ko‘ring:',
+    footerShop: 'Do‘kon', footerInfo: 'Sahifalar', filtersLabel: 'Filtrlar',
+    flowDetails: 'Ma’lumotlar', flowDone: 'Tayyor', contactTelegram: 'Telegram', contactPhone: 'Telefon'
+  },
+  ru: {
+    navMenu: 'Меню', mln: 'млн',
+    brandsTitle: 'Бренды в каталоге',
+    statWarranty: 'мес. сервисной гарантии', statProducts: 'товаров', statCategories: 'категорий', statFree: 'сум — бесплатная доставка',
+    checkCompat: 'Проверяем совместимость сокета, DDR и блока питания', checkCables: 'Аккуратная укладка кабелей', checkTest: 'Финальный стресс-тест',
+    processEyebrow: 'Как мы работаем', processTitle: 'От выбора до вашей двери',
+    step1: 'Вы выбираете', step1Text: 'Возьмите готовый ПК или соберите конфигурацию сами.',
+    step2: 'Мы проверяем', step2Text: 'Проверяем совместимость комплектующих и запас по питанию.',
+    step3: 'Собираем и тестируем', step3Text: 'Укладываем кабели и гоняем систему под нагрузкой.',
+    step4: 'Доставляем', step4Text: 'Оператор подтвердит заказ по телефону, доставим по Узбекистану.',
+    faqTitle: 'Частые вопросы',
+    faq1q: 'Как подтверждается заказ?', faq1a: 'После оформления оператор свяжется с вами по телефону и уточнит детали.',
+    faq2q: 'Сколько стоит доставка?', faq2a: 'Бесплатно при заказе от 1 000 000 сум, иначе — 30 000 сум.',
+    faq3q: 'Как можно оплатить?', faq3a: 'Наличными или картой.',
+    faq4q: 'Есть ли гарантия?', faq4a: 'Да, на каждую сборку — 12 месяцев сервисной гарантии.',
+    ctaTitle: 'Соберём ваш идеальный ПК вместе', ctaText: 'Выберите бюджет и задачи — совместимость проверим мы.',
+    notFoundTitle: 'Страница не найдена', notFoundText: 'Возможно, адрес введён неверно или страница перемещена. Попробуйте поиск:',
+    footerShop: 'Магазин', footerInfo: 'Страницы', filtersLabel: 'Фильтры',
+    flowDetails: 'Данные', flowDone: 'Готово', contactTelegram: 'Telegram', contactPhone: 'Телефон'
+  },
+  en: {
+    navMenu: 'Menu', mln: 'M',
+    brandsTitle: 'Brands in the catalog',
+    statWarranty: 'months of service cover', statProducts: 'products', statCategories: 'categories', statFree: 'UZS and up: free delivery',
+    checkCompat: 'Socket, DDR and PSU compatibility checked', checkCables: 'Tidy cable management', checkTest: 'Final stress test',
+    processEyebrow: 'How it works', processTitle: 'From your choice to your door',
+    step1: 'You choose', step1Text: 'Pick a ready PC or configure your own build.',
+    step2: 'We verify', step2Text: 'We check that parts fit together and that the PSU has headroom.',
+    step3: 'We build and test', step3Text: 'Cables are routed neatly and the system is tested under load.',
+    step4: 'We deliver', step4Text: 'An operator confirms by phone and we deliver across Uzbekistan.',
+    faqTitle: 'Frequently asked questions',
+    faq1q: 'How is my order confirmed?', faq1a: 'After you place it, an operator calls you to confirm the details.',
+    faq2q: 'How much is delivery?', faq2a: 'Free for orders from 1,000,000 UZS, otherwise 30,000 UZS.',
+    faq3q: 'How can I pay?', faq3a: 'In cash or by card.',
+    faq4q: 'Is there a warranty?', faq4a: 'Yes, every build comes with 12 months of service cover.',
+    ctaTitle: 'Let’s build your ideal PC together', ctaText: 'Choose a budget and a goal, and we will check the compatibility.',
+    notFoundTitle: 'Page not found', notFoundText: 'The address may be mistyped or the page may have moved. Try searching:',
+    footerShop: 'Shop', footerInfo: 'Pages', filtersLabel: 'Filters',
+    flowDetails: 'Details', flowDone: 'Done', contactTelegram: 'Telegram', contactPhone: 'Phone'
+  }
+};

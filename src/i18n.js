@@ -244,6 +244,9 @@ const I18N = {
   }
 };
 
+const EXTRA = require('./i18n-extra');
+for (const lang of Object.keys(EXTRA)) Object.assign(I18N[lang], EXTRA[lang]);
+
 function tr(session, key) {
   const lang = session?.lang || 'uz';
   return (I18N[lang] || I18N.uz)[key] || I18N.uz[key] || key;

@@ -63,6 +63,13 @@ const autoVercelOrigin = process.env.VERCEL_PROJECT_PRODUCTION_URL
   : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
 const PUBLIC_ORIGIN = String(process.env.PUBLIC_URL || autoVercelOrigin).replace(/\/$/, '');
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Optional public contact details. Shown in the footer only when they are set,
+// so the store never advertises a phone number or Telegram link that does not exist.
+const CONTACT_PHONE = String(process.env.CONTACT_PHONE || '').trim().slice(0, 32);
+const CONTACT_TELEGRAM = /^[A-Za-z0-9_]{4,32}$/.test(String(process.env.CONTACT_TELEGRAM || '').replace(/^@/, ''))
+  ? String(process.env.CONTACT_TELEGRAM).replace(/^@/, '')
+  : '';
 const PROD = NODE_ENV === 'production';
 
 function readLegacyLocalKey() {
@@ -208,7 +215,7 @@ function tashkentDayStart(now = new Date()) {
 
 module.exports = {
   ROOT, ON_VERCEL, DATA_DIR, STORE_FILE, SESSION_KEY_FILE, CATALOG_FILE,
-  PORT, HOST, PUBLIC_ORIGIN, NODE_ENV, PROD, SESSION_KEY,
+  PORT, HOST, PUBLIC_ORIGIN, NODE_ENV, PROD, SESSION_KEY, CONTACT_PHONE, CONTACT_TELEGRAM,
   CATEGORIES, STATUSES, TAG_KEYS, CATEGORY_KEYS, BUILD_FIELDS,
   LEGACY_PRODUCT_IDS, LEGACY_SLUG_REDIRECTS,
   readLegacyLocalKey, esc, safeJson, localized, formatPrice,

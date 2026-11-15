@@ -1,25 +1,30 @@
 <footer class="site-footer">
-  <div class="container footer-top">
-    <a href="{{homeUrl}}" class="brand footer-brand" aria-label="KrakenPC">
-      <div class="brand-mark-wrap">
-        <img class="brand-mark" src="/favicon.png" alt="" width="42" height="42" decoding="async" loading="lazy">
-      </div>
-      <div class="brand-text">
-        <span class="brand-logotype">KRAKEN<span class="brand-accent">PC</span></span>
-        <small class="brand-tagline">PERFORMANCE, BUILT RIGHT</small>
-      </div>
-    </a>
-    <div class="footer-center">
+  <div class="container footer-grid">
+    <div class="footer-brand-col">
+      <a href="{{homeUrl}}" class="brand footer-brand" aria-label="KrakenPC">
+        <img class="brand-mark" src="/favicon.svg" alt="" width="40" height="40" decoding="async" loading="lazy">
+        <span class="brand-text"><span class="brand-name">KRAKEN<span class="brand-accent">PC</span></span><small>PERFORMANCE, BUILT RIGHT</small></span>
+      </a>
       <p class="footer-promise">{{footerSignature}}</p>
-      <p class="footer-policy-text">{{footerPolicy}}</p>
+      <p class="footer-policy">{{footerPolicy}}</p>
+      {{{contactHtml}}}
     </div>
-    <div class="footer-end">
-      <a class="footer-admin" href="/admin">{{adminTitle}}</a>
+    <div>
+      <h2 class="footer-title">{{footerShop}}</h2>
+      <ul class="footer-links">{{{shopLinksHtml}}}</ul>
+    </div>
+    <div>
+      <h2 class="footer-title">{{footerInfo}}</h2>
+      <ul class="footer-links">{{{infoLinksHtml}}}</ul>
+    </div>
+    <div>
+      <h2 class="footer-title">{{langLabel}}</h2>
+      <nav class="lang-switch lang-switch-lg" aria-label="{{langLabel}}">{{{langLinksHtml}}}</nav>
+      <p class="footer-region"><span class="live-dot" aria-hidden="true"></span>{{region}}</p>
     </div>
   </div>
   <div class="container footer-bottom">
-    <span class="footer-copy">© {{year}} KrakenPC. Barcha huquqlar himoyalangan.</span>
-    <span class="footer-region"><span class="live-dot pulse"></span>{{region}}</span>
-    <a class="footer-catalog-link" href="{{catalogUrl}}">{{navCatalog}}</a>
+    <span>© {{year}} KrakenPC</span>
+    <a class="footer-admin" href="/admin">{{adminTitle}}</a>
   </div>
 </footer>

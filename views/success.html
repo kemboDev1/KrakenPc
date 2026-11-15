@@ -1,5 +1,6 @@
 <section class="container success-wrap">
-  <div class="success-check">{{{iconCheck}}}</div>
+  <canvas class="confetti" data-confetti aria-hidden="true"></canvas>
+  <div class="success-check"><svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="23"/><path d="m15 27 8 8 15-17"/></svg></div>
   <p class="eyebrow"><span class="eyebrow-rule"></span>KrakenPC</p>
   <h1>{{orderSuccessTitle}}</h1>
   <p class="success-intro">{{orderSuccessText}}</p>
@@ -9,12 +10,8 @@
       <strong>{{orderId}}</strong>
     </div>
     {{{itemsHtml}}}
-    <div class="success-item success-total">
-      <span>{{totalLabel}}</span>
-      <strong>{{totalFormatted}}</strong>
-    </div>
+    {{{totalHtml}}}
   </div>
   <p class="form-help">{{telegramState}}</p>
-  <a class="button button-primary" href="/">{{returnHomeLabel}} {{{iconArrow}}}</a>
+  <a class="button button-primary button-lg" href="/">{{returnHomeLabel}} {{{iconArrow}}}</a>
 </section>
-

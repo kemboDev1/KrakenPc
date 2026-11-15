@@ -3,8 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
-  ROOT, TAG_KEYS, esc, safeJson, localized, formatPrice, requestOrigin, canonical, localizedRoute, localPath
+  ROOT, TAG_KEYS, CATEGORIES, CONTACT_PHONE, CONTACT_TELEGRAM,
+  esc, safeJson, localized, formatPrice, requestOrigin, canonical, localizedRoute, localPath
 } = u(require('../config'));
+const { assetUrl } = u(require('../assets'));
 const { tr } = u(require('../i18n'));
 const { productById } = u(require('../storage'));
 const { renderTemplate } = u(require('../templateEngine'));
@@ -18,7 +20,6 @@ function iconSvg(name, extraClass = '') {
     heart: '<path d="M20.8 8.8c0 5.3-8.8 10.1-8.8 10.1S3.2 14.1 3.2 8.8A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 8.8 2.4Z"/>',
     compare: '<path d="M4 7h15m0 0-3-3m3 3-3 3M20 17H5m0 0 3 3m-3-3 3-3"/>',
     cart: '<path d="M3 4h2l2.1 11.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/>',
-    grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>',
     search: '<circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/>',
     home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1v-9.5Z"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
@@ -46,7 +47,15 @@ function iconSvg(name, extraClass = '') {
     cooling: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M12 14v6M5.1 8l5.2 3M13.7 13l5.2 3M18.9 8l-5.2 3M10.3 13l-5.2 3"/>',
     cases: '<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 6h6v9H9V6Zm1 12h4"/>',
     monitors: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/>',
-    peripherals: '<rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M7 10h2M11 10h2M15 10h2M8 14h8"/>'
+    peripherals: '<rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M7 10h2M11 10h2M15 10h2M8 14h8"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+    card: '<rect x="2.5" y="5" width="19" height="14" rx="2.2"/><path d="M2.5 10h19M6.5 15h4"/>',
+    cursor: '<path d="m5 3 14 7-6 2-2 6L5 3Z"/>',
+    wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z"/>',
+    filter: '<path d="M3 5h18M6 12h12M10 19h4"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/>',
+    telegram: '<path d="m21.5 4.5-18.7 7.2c-.8.3-.8 1.4 0 1.7l4.7 1.6 1.8 5.5c.2.7 1.1.9 1.6.4l2.6-2.4 4.7 3.5c.6.4 1.4.1 1.6-.6L23 5.8c.2-.9-.7-1.6-1.5-1.3ZM8 14.3l9.5-6-6.9 7.4"/>'
   };
   const cls = ['icon', `icon-${esc(name)}`, extraClass].filter(Boolean).join(' ');
   return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name] || ''}</svg>`;
@@ -54,20 +63,32 @@ function iconSvg(name, extraClass = '') {
 
 const IMAGE_DIR = path.join(ROOT, 'public', 'images');
 let availableImages = null;
+let availableWebp = null;
+
+function scanImages() {
+  availableImages = new Set();
+  availableWebp = new Set();
+  try {
+    const names = fs.readdirSync(IMAGE_DIR);
+    for (const name of names) {
+      if (name.endsWith('.jpg')) availableImages.add(name.slice(0, -4));
+    }
+    for (const id of availableImages) {
+      if (names.includes(`${id}.webp`) && names.includes(`${id}-400.webp`)) availableWebp.add(id);
+    }
+  } catch {
+    // no photos: fall back to generated artwork
+  }
+}
 
 function hasProductPhoto(id) {
-  if (!availableImages) {
-    try {
-      availableImages = new Set(
-        fs.readdirSync(IMAGE_DIR)
-          .filter(name => name.endsWith('.jpg'))
-          .map(name => name.slice(0, -4))
-      );
-    } catch {
-      availableImages = new Set();
-    }
-  }
+  if (!availableImages) scanImages();
   return availableImages.has(id);
+}
+
+function hasWebp(id) {
+  if (!availableWebp) scanImages();
+  return availableWebp.has(id);
 }
 
 function productImageUrl(product) {
@@ -75,13 +96,29 @@ function productImageUrl(product) {
   return hasProductPhoto(product.id) ? `/images/${id}.jpg` : `/art/${id}.svg`;
 }
 
-function productImage(product, session, { hero = false, lazy = true } = {}) {
+// Small WebP for cards (≈7 KB instead of ≈45 KB), larger one for hero/detail,
+// original JPEG as the universal fallback.
+function productImage(product, session, { hero = false, lazy = true, sizes = '' } = {}) {
+  const id = encodeURIComponent(product.id);
   const suffix = session.lang === 'ru'
     ? '— фото товара'
     : session.lang === 'en'
       ? '— product photo'
       : '— mahsulot rasmi';
-  return `<img class="product-art ${hero ? 'product-art-hero' : ''}" src="${productImageUrl(product)}" alt="${esc(localized(product, 'name', session))} ${suffix}" width="800" height="600" ${lazy ? 'loading="lazy" decoding="async"' : 'fetchpriority="high" decoding="async"'}>`;
+  const loading = lazy ? 'loading="lazy" decoding="async"' : 'fetchpriority="high" decoding="async"';
+  const img = `<img class="product-art ${hero ? 'product-art-hero' : ''}" src="${productImageUrl(product)}" alt="${esc(localized(product, 'name', session))} ${suffix}" width="800" height="600" ${loading}>`;
+  if (!hasProductPhoto(product.id) || !hasWebp(product.id)) return img;
+  const fit = sizes || (hero
+    ? '(min-width: 960px) 48vw, 92vw'
+    : '(min-width: 1100px) 24vw, (min-width: 640px) 45vw, 92vw');
+  return `<picture><source type="image/webp" srcset="/images/${id}-400.webp 400w, /images/${id}.webp 800w" sizes="${fit}">${img}</picture>`;
+}
+
+function imagePreload(product, { hero = false } = {}) {
+  if (!product || !hasWebp(product.id)) return '';
+  const id = encodeURIComponent(product.id);
+  const fit = hero ? '(min-width: 960px) 48vw, 92vw' : '(min-width: 1100px) 40vw, 92vw';
+  return `<link rel="preload" as="image" type="image/webp" imagesrcset="/images/${id}-400.webp 400w, /images/${id}.webp 800w" imagesizes="${fit}" fetchpriority="high">`;
 }
 
 function priceMarkup(product, lang) {
@@ -130,11 +167,13 @@ function card(product, session, { compact = false, lazy = true } = {}) {
     favPressed: on ? 'true' : 'false',
     favoriteLabel,
     iconHeart: iconSvg('heart'),
+    brand: product.brand,
     name: localized(product, 'name', session),
     specsHtml: product.specs.slice(0, compact ? 2 : 3).map(spec => `<span>${esc(spec)}</span>`).join(''),
     stockHtml: stockTag(product, session),
     priceHtml: priceMarkup(product, session.lang),
     addCartDisabledAttr: product.stock < 1 ? 'disabled' : '',
+    iconCart: iconSvg('cart'),
     addCartLabel: tr(session, 'addCart'),
     compareActiveClass: comparing ? 'is-active' : '',
     comparePressed: comparing ? 'true' : 'false',
@@ -177,6 +216,30 @@ function orderSummary(session, totals) {
   });
 }
 
+const LANG_CODES = ['uz', 'ru', 'en'];
+
+function settingsHref(session, params) {
+  const query = new URLSearchParams({ ...params, back: session.currentPath || '/' });
+  return `/settings?${query.toString()}`;
+}
+
+// Plain links: they work without JavaScript, can be opened in a new tab and
+// cannot fail with an "expired page" the way a CSRF-protected POST could.
+function langLinks(session) {
+  return LANG_CODES.map(code => {
+    const on = session.lang === code;
+    return `<a class="lang-link ${on ? 'is-active' : ''}" href="${esc(settingsHref(session, { lang: code }))}" hreflang="${code}" lang="${code}" ${on ? 'aria-current="true"' : ''}>${code.toUpperCase()}</a>`;
+  }).join('');
+}
+
+function themeHref(session) {
+  return settingsHref(session, { theme: session.theme === 'dark' ? 'light' : 'dark' });
+}
+
+function countOrEmpty(value) {
+  return Number(value) > 0 ? String(value) : '';
+}
+
 function pageHeader(active, session) {
   const links = [
     ['/catalog?type=pc', 'navPCs', active === 'pcs'],
@@ -185,87 +248,127 @@ function pageHeader(active, session) {
     ['/catalog', 'navCatalog', active === 'catalog']
   ];
   const count = Object.values(session.cart || {}).reduce((a, n) => a + Number(n || 0), 0);
-  const favCount = (session.favorites || []).length;
-  const compareCount = (session.compare || []).length;
   const skipText = session.lang === 'ru'
-    ? 'Перейти к товарам'
+    ? 'Перейти к содержимому'
     : session.lang === 'en'
-      ? 'Skip to products'
-      : 'Mahsulotlarga o‘tish';
+      ? 'Skip to content'
+      : 'Mazmunga o‘tish';
 
-  const themeToggleLabel = session.theme === 'dark' ? tr(session, 'themeLight') : tr(session, 'themeDark');
   return renderTemplate('partials/header', {
     skipText,
     region: tr(session, 'region'),
-    csrfField: csrfField(session),
+    freeFrom: tr(session, 'freeFrom'),
+    iconTruck: iconSvg('truck'),
     langLabel: tr(session, 'langLabel'),
-    selUz: session.lang === 'uz' ? 'selected' : '',
-    selRu: session.lang === 'ru' ? 'selected' : '',
-    selEn: session.lang === 'en' ? 'selected' : '',
-    themeLabel: tr(session, 'themeLabel'),
-    themeToggleLabel,
+    langLinksHtml: langLinks(session),
+    themeHref: themeHref(session),
+    themeToggleLabel: session.theme === 'dark' ? tr(session, 'themeLight') : tr(session, 'themeDark'),
     iconSun: iconSvg('sun'),
     iconMoon: iconSvg('moon'),
-    selDark: session.theme === 'dark' ? 'selected' : '',
-    selLight: session.theme === 'light' ? 'selected' : '',
-    themeDark: tr(session, 'themeDark'),
-    themeLight: tr(session, 'themeLight'),
-    backPath: session.currentPath || '/',
-    apply: tr(session, 'apply'),
     homeUrl: localizedRoute('/', session.lang),
     navHome: tr(session, 'navHome'),
-    iconHome: iconSvg('home'),
     iconSearch: iconSvg('search'),
-    searchPlaceholder: tr(session, 'search'),
-    lang: session.lang,
+    searchAction: tr(session, 'searchAction'),
     paletteTitle: tr(session, 'paletteTitle'),
     shortcutTip: tr(session, 'shortcutTip'),
-    searchAction: tr(session, 'searchAction'),
     compareUrl: localizedRoute('/compare', session.lang),
     navCompare: tr(session, 'navCompare'),
     iconCompare: iconSvg('compare'),
-    compareCountDisplay: compareCount || '',
+    compareCountDisplay: countOrEmpty((session.compare || []).length),
     favoritesUrl: localizedRoute('/favorites', session.lang),
     navFavorites: tr(session, 'navFavorites'),
     iconHeart: iconSvg('heart'),
-    favCountDisplay: favCount || '',
+    favCountDisplay: countOrEmpty((session.favorites || []).length),
     cartUrl: localizedRoute('/cart', session.lang),
     navCart: tr(session, 'navCart'),
     iconCart: iconSvg('cart'),
-    cartCount: count,
-    catalogUrl: localizedRoute('/catalog', session.lang),
-    builderUrl: localizedRoute('/builder', session.lang),
-    navBuilder: tr(session, 'navBuilder'),
-    iconGrid: iconSvg('grid'),
-    iconBuilder: iconSvg('processors'),
+    cartCount: countOrEmpty(count),
     navLabel: tr(session, 'navCatalog'),
-    homeActiveClass: active === 'home' ? 'active' : '',
-    activeHomeClass: active === 'home' ? 'is-active' : '',
-    activeCatalogClass: ['catalog', 'pcs', 'parts'].includes(active) ? 'is-active' : '',
-    activeBuilderClass: active === 'builder' ? 'is-active' : '',
-    activeFavoritesClass: active === 'favorites' ? 'is-active' : '',
-    activeCompareClass: active === 'compare' ? 'is-active' : '',
-    activeCartClass: active === 'cart' ? 'is-active' : '',
     navLinksHtml: links
-      .map(([href, key, on]) => `<a class="${on ? 'active' : ''}" href="${esc(localizedRoute(href, session.lang))}">${esc(tr(session, key))}</a>`)
+      .map(([href, key, on]) => `<a class="nav-link ${on ? 'active' : ''}" href="${esc(localizedRoute(href, session.lang))}" ${on ? 'aria-current="page"' : ''}>${esc(tr(session, key))}</a>`)
       .join('')
   });
 }
 
+function mobileNav(active, session) {
+  const count = Object.values(session.cart || {}).reduce((a, n) => a + Number(n || 0), 0);
+  const on = key => (active === key ? 'active' : '');
+  return renderTemplate('partials/mobile-nav', {
+    navLabel: tr(session, 'navCatalog'),
+    homeUrl: localizedRoute('/', session.lang),
+    catalogUrl: localizedRoute('/catalog', session.lang),
+    builderUrl: localizedRoute('/builder', session.lang),
+    cartUrl: localizedRoute('/cart', session.lang),
+    homeActive: on('home'),
+    catalogActive: ['catalog', 'pcs', 'parts'].includes(active) ? 'active' : '',
+    builderActive: on('builder'),
+    cartActive: on('cart'),
+    navHome: tr(session, 'navHome'),
+    navCatalog: tr(session, 'navCatalog'),
+    navBuilder: tr(session, 'navBuilder'),
+    navCart: tr(session, 'navCart'),
+    navMenu: tr(session, 'navMenu'),
+    iconHome: iconSvg('home'),
+    iconGrid: iconSvg('grid'),
+    iconCpu: iconSvg('processors'),
+    iconCart: iconSvg('cart'),
+    iconMenu: iconSvg('menu'),
+    cartCount: countOrEmpty(count)
+  });
+}
+
 function pageFooter(session) {
+  const link = (href, label) => `<li><a href="${esc(localizedRoute(href, session.lang))}">${esc(label)}</a></li>`;
+  const shopLinksHtml = [
+    link('/catalog?type=pc', tr(session, 'navPCs')),
+    link('/catalog?cat=graphics', tr(session, 'graphics')),
+    link('/catalog?cat=processors', tr(session, 'processors')),
+    link('/catalog?cat=memory', tr(session, 'memory')),
+    link('/catalog?cat=monitors', tr(session, 'monitors'))
+  ].join('');
+  const infoLinksHtml = [
+    link('/builder', tr(session, 'navBuilder')),
+    link('/catalog', tr(session, 'navCatalog')),
+    link('/compare', tr(session, 'navCompare')),
+    link('/favorites', tr(session, 'navFavorites')),
+    link('/cart', tr(session, 'navCart'))
+  ].join('');
+  const contacts = [];
+  if (CONTACT_TELEGRAM) {
+    contacts.push(`<a class="contact-pill" href="https://t.me/${esc(CONTACT_TELEGRAM)}" rel="noopener" target="_blank">${iconSvg('telegram')}<span>@${esc(CONTACT_TELEGRAM)}</span></a>`);
+  }
+  if (CONTACT_PHONE) {
+    contacts.push(`<a class="contact-pill" href="tel:${esc(CONTACT_PHONE.replace(/[^+0-9]/g, ''))}">${iconSvg('phone')}<span>${esc(CONTACT_PHONE)}</span></a>`);
+  }
   return renderTemplate('partials/footer', {
     homeUrl: localizedRoute('/', session.lang),
     footerSignature: tr(session, 'footerSignature'),
     footerPolicy: tr(session, 'footerPolicy'),
-    adminTitle: tr(session, 'adminTitle'),
-    year: String(new Date().getFullYear()),
+    contactHtml: contacts.length ? `<div class="contact-row">${contacts.join('')}</div>` : '',
+    footerShop: tr(session, 'footerShop'),
+    footerInfo: tr(session, 'footerInfo'),
+    shopLinksHtml,
+    infoLinksHtml,
+    langLabel: tr(session, 'langLabel'),
+    langLinksHtml: langLinks(session),
     region: tr(session, 'region'),
-    catalogUrl: localizedRoute('/catalog', session.lang),
-    navCatalog: tr(session, 'navCatalog')
+    adminTitle: tr(session, 'adminTitle'),
+    year: String(new Date().getFullYear())
   });
 }
 
 function uiOverlays(session) {
+  const compare = (session.compare || []).length;
+  const favs = (session.favorites || []).length;
+  const item = (href, icon, label, badge = '') => `<a href="${esc(localizedRoute(href, session.lang))}">${iconSvg(icon)}<span>${esc(label)}</span>${badge ? `<b class="count-badge" ${badge}>` : ''}</a>`;
+  const sheetLinksHtml = [
+    item('/catalog?type=pc', 'cases', tr(session, 'navPCs')),
+    item('/catalog?type=part', 'processors', tr(session, 'navParts')),
+    item('/builder', 'wrench', tr(session, 'navBuilder')),
+    item('/catalog', 'grid', tr(session, 'navCatalog')),
+    `<a href="${esc(localizedRoute('/compare', session.lang))}">${iconSvg('compare')}<span>${esc(tr(session, 'navCompare'))}</span><b class="count-badge" data-compare-count>${countOrEmpty(compare)}</b></a>`,
+    `<a href="${esc(localizedRoute('/favorites', session.lang))}">${iconSvg('heart')}<span>${esc(tr(session, 'navFavorites'))}</span><b class="count-badge" data-fav-count>${countOrEmpty(favs)}</b></a>`
+  ].join('');
   return renderTemplate('partials/modals', {
     paletteTitle: tr(session, 'paletteTitle'),
     cancel: tr(session, 'cancel'),
@@ -274,7 +377,17 @@ function uiOverlays(session) {
     palettePlaceholder: tr(session, 'palettePlaceholder'),
     shortcutTip: tr(session, 'shortcutTip'),
     confirmTitle: tr(session, 'confirmTitle'),
-    confirm: tr(session, 'confirm')
+    confirm: tr(session, 'confirm'),
+    navMenu: tr(session, 'navMenu'),
+    search: tr(session, 'search'),
+    sheetLinksHtml,
+    langLabel: tr(session, 'langLabel'),
+    langLinksHtml: langLinks(session),
+    themeHref: themeHref(session),
+    themeToggleLabel: session.theme === 'dark' ? tr(session, 'themeLight') : tr(session, 'themeDark'),
+    iconSun: iconSvg('sun'),
+    iconMoon: iconSvg('moon'),
+    region: tr(session, 'region')
   });
 }
 
@@ -309,7 +422,10 @@ function bootPayload(session) {
       builderPowerLabel: tr(session, 'builderPowerLabel'),
       builderPsuLabel: tr(session, 'builderPsuLabel'),
       deliveryFree: tr(session, 'deliveryFree'),
-      stock: tr(session, 'stock')
+      stock: tr(session, 'stock'),
+      cancel: tr(session, 'cancel'),
+      themeLight: tr(session, 'themeLight'),
+      themeDark: tr(session, 'themeDark')
     }
   };
 }
@@ -322,8 +438,9 @@ function renderPage(req, res, session, {
   canonicalRoute = '',
   noindex = false,
   structured = null,
-  ogImage = '',
+  ogImage = '/og-cover.jpg',
   ogType = 'website',
+  preload = '',
   statusCode = 200
 }) {
   session.currentPath = localPath(req.url);
@@ -348,12 +465,14 @@ function renderPage(req, res, session, {
   const ogLocale = session.lang === 'uz' ? 'uz_UZ' : session.lang === 'ru' ? 'ru_UZ' : 'en_US';
   const bootTag = `<script nonce="${nonce}" id="kraken-boot" type="application/json">${safeJson(bootPayload(session))}</script>`;
 
+  const pathOnly = localPath(req.url).split('?')[0];
+  const pageKey = pathOnly === '/' ? 'home' : (pathOnly.split('/')[1] || 'home').replace(/[^a-z0-9-]/gi, '');
   const html = renderTemplate('layout', {
     lang: session.lang,
     theme: session.theme,
     title,
     description,
-    themeColor: session.theme === 'dark' ? '#0b1118' : '#f1f5f6',
+    themeColor: session.theme === 'dark' ? '#060a12' : '#f3f6fb',
     robotsTag,
     canonicalTags,
     ogType,
@@ -361,16 +480,26 @@ function renderPage(req, res, session, {
     ogUrlTag,
     ogImageTag,
     schemaTags,
+    preloadHtml: preload,
+    cssUrl: assetUrl('style.css'),
+    jsUrl: assetUrl('app.js'),
+    nonce,
+    pageKey,
     headerHtml: pageHeader(active, session),
     content,
     footerHtml: pageFooter(session),
+    mobileNavHtml: mobileNav(pageKey === 'cart' || pageKey === 'checkout' ? 'cart' : active, session),
     modalsHtml: uiOverlays(session),
     bootTag
   });
 
+  const sensitive = ['/admin', '/checkout', '/success'].some(prefix => pathOnly.startsWith(prefix));
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  // `private, no-cache` (not no-store) keeps back/forward instant and lets
+  // Chromium prerender the next page; the browser still revalidates normal loads.
+  res.setHeader('Cache-Control', sensitive ? 'private, no-store' : 'private, no-cache');
+  res.setHeader('Speculation-Rules', '"/speculation.json"');
   if (typeof res.outputBody === 'function') {
     res.outputBody(html);
   } else {
@@ -391,5 +520,6 @@ module.exports = {
   cardGrid,
   cartTotals,
   orderSummary,
+  imagePreload,
   renderPage
 };

@@ -2,6 +2,6 @@
 .env.*
 .data/
 tests/
+tools/
 *.log
 .DS_Store
-

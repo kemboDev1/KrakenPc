@@ -4,11 +4,12 @@
     <h1>{{heading}}</h1>
     <p>{{foundCount}} {{productsFoundLabel}}</p>
   </div>
-  <a class="breadcrumb" href="/">{{navHome}} {{{iconChevron}}} {{navCatalog}}</a>
+  <nav class="crumbs" aria-label="breadcrumb"><a href="/">{{navHome}}</a>{{{iconChevron}}}<a href="/catalog">{{navCatalog}}</a></nav>
 </section>
 
 <section class="catalog-layout container">
-  <aside class="filter-panel">
+  <button type="button" class="filter-toggle" data-filter-toggle aria-expanded="false" aria-controls="filter-panel">{{{iconFilter}}}<span>{{filtersLabel}}</span></button>
+  <aside class="filter-panel" id="filter-panel" data-filter-panel>
     <form action="/catalog" method="get">
       <h2>{{categoryTitle}}</h2>
       <input type="hidden" name="lang" value="{{lang}}">
@@ -56,6 +57,7 @@
   </aside>
 
   <div class="catalog-results">
+    <nav class="chip-row" aria-label="{{categoryTitle}}">{{{categoryChipsHtml}}}</nav>
     <div class="catalog-topline">
       <span><strong>{{foundCount}}</strong> {{productsFoundLabel}}</span>
       <div class="active-filter-pills">

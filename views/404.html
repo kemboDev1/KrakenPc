@@ -1,7 +1,13 @@
-<section class="container simple-state">
-  <span class="state-icon">404</span>
-  <h1>{{pageNotFound}}</h1>
-  <p>{{productNotFound}}</p>
-  <a href="/catalog" class="button button-primary">{{navCatalog}}</a>
+<section class="container simple-state state-404">
+  <div class="state-art" aria-hidden="true"><span>4</span><img src="/favicon.svg" alt="" width="120" height="120"><span>4</span></div>
+  <h1>{{notFoundTitle}}</h1>
+  <p>{{notFoundText}}</p>
+  <form class="state-search" action="/catalog" method="get" role="search">
+    {{{iconSearch}}}<input type="search" name="q" maxlength="80" placeholder="{{searchPlaceholder}}" aria-label="{{searchPlaceholder}}">
+    <button class="button button-primary" type="submit">{{searchAction}}</button>
+  </form>
+  <div class="state-actions">
+    <a href="{{homeUrl}}" class="button button-ghost">{{returnHome}}</a>
+    <a href="/catalog" class="button button-ghost">{{navCatalog}}</a>
+  </div>
 </section>
-

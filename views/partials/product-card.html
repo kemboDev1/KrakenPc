@@ -1,6 +1,6 @@
-<article class="product-card {{compactClass}}" data-product-card="{{id}}">
+<article class="product-card {{compactClass}}" data-product-card="{{id}}" data-spotlight>
   <div class="card-art">
-    <a href="{{productHref}}" tabindex="-1" aria-hidden="true">{{{imageHtml}}}</a>
+    <a class="card-art-link" href="{{productHref}}" tabindex="-1" aria-hidden="true">{{{imageHtml}}}</a>
     {{{tagHtml}}}
     <div class="card-icon-actions">
       <form action="/favorites/toggle" method="post" data-async-form="favorite" data-product-id="{{id}}">
@@ -12,16 +12,19 @@
     </div>
   </div>
   <div class="card-body">
+    <p class="card-brand">{{brand}}</p>
     <a class="card-name" href="{{productHref}}">{{name}}</a>
     <div class="card-specs">{{{specsHtml}}}</div>
-    {{{stockHtml}}}
-    {{{priceHtml}}}
+    <div class="card-buy">
+      {{{stockHtml}}}
+      {{{priceHtml}}}
+    </div>
     <div class="card-actions">
       <form action="/cart/add" method="post" data-async-form="cart-add" data-product-id="{{id}}">
         {{{csrfField}}}
         <input type="hidden" name="id" value="{{id}}">
         <input type="hidden" name="back" value="{{back}}">
-        <button class="button button-primary" type="submit" {{addCartDisabledAttr}}>{{addCartLabel}}</button>
+        <button class="button button-primary" type="submit" {{addCartDisabledAttr}}>{{{iconCart}}}<span>{{addCartLabel}}</span></button>
       </form>
       <form action="/compare/toggle" method="post" data-async-form="compare" data-product-id="{{id}}">
         {{{csrfField}}}
@@ -32,4 +35,3 @@
     </div>
   </div>
 </article>
-

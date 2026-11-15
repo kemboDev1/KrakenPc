@@ -30,3 +30,21 @@
   </div>
 </div>
 
+<div class="modal-backdrop sheet-backdrop" id="menu-sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+    <span class="sheet-handle" aria-hidden="true"></span>
+    <div class="modal-head">
+      <strong id="menu-title">{{navMenu}}</strong>
+      <button type="button" class="modal-close" data-close-modal aria-label="{{cancel}}">{{{iconClose}}}</button>
+    </div>
+    <button type="button" class="sheet-search" data-open-palette>{{{iconSearch}}}<span>{{search}}</span></button>
+    <nav class="sheet-links" aria-label="{{navMenu}}">{{{sheetLinksHtml}}}</nav>
+    <div class="sheet-prefs">
+      <nav class="lang-switch lang-switch-lg" aria-label="{{langLabel}}">{{{langLinksHtml}}}</nav>
+      <a class="theme-toggle-btn theme-toggle-lg" href="{{themeHref}}" data-theme-toggle aria-label="{{themeToggleLabel}}">
+        <span class="theme-icon-sun">{{{iconSun}}}</span><span class="theme-icon-moon">{{{iconMoon}}}</span><span>{{themeToggleLabel}}</span>
+      </a>
+    </div>
+    <p class="sheet-note"><span class="live-dot" aria-hidden="true"></span>{{region}}</p>
+  </div>
+</div>

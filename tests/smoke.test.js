@@ -280,7 +280,7 @@ test('SSR pages render clean HTML from views/, structured JSON-LD, and compare a
   assert.ok(client.csrf.length > 10, 'Expected CSRF token rendered in page');
   assert.ok(home.body.includes('"@type":"WebSite"'), 'Expected WebSite schema JSON-LD');
   assert.ok(home.body.includes('"@type":"Organization"'), 'Expected Organization schema JSON-LD');
-  assert.ok(home.body.includes('class="brand-mark" src="/favicon.png"'), 'Expected Kraken emblem brand mark in header and footer');
+  assert.ok(home.body.includes('class="brand-mark" src="/favicon.svg"'), 'Expected Kraken emblem brand mark in header and footer');
   assert.ok(!home.body.includes('m25 9-12 17'), 'Legacy hexagon placeholder SVG should not remain');
   assert.ok(!home.body.includes('Kraken Aurora'), 'Home should use real hardware product names');
   assert.ok(!/\{\{\{?[a-zA-Z0-9_.]+\}?\}\}/.test(home.body), 'No unreplaced template tokens should remain on home page');
@@ -549,10 +549,18 @@ test('language switching is a plain GET and never renders an "expired page"', as
 
   const switched = await client.get('/settings?lang=ru&back=/catalog');
   assert.equal(switched.status, 303);
-  assert.equal(switched.headers.get('location'), '/catalog');
+  assert.equal(switched.headers.get('location'), '/catalog?lang=ru');
 
   const catalog = await client.get('/catalog');
   assert.ok(catalog.body.includes('<html lang="ru"'), 'Language switch must apply via GET');
+
+  // Regression: opened as /catalog?lang=ru, then switched back to Uzbek. The old
+  // ?lang=ru in the return path used to override the new choice.
+  const back = await client.get('/settings?lang=uz&back=' + encodeURIComponent('/catalog?type=pc&lang=ru'));
+  assert.equal(back.status, 303);
+  assert.equal(back.headers.get('location'), '/catalog?type=pc');
+  const uz = await client.get(back.headers.get('location'));
+  assert.ok(uz.body.includes('<html lang="uz"'), 'Switching back to Uzbek must stick');
 
   // A stale CSRF token must bounce the visitor back, not show the scary error page
   const stale = await client.postForm(
@@ -649,4 +657,74 @@ test('sealed session cookies survive a different server instance (serverless lam
     secondProc.kill('SIGKILL');
     fs.rmSync(secondData, { recursive: true, force: true });
   }
+});
+
+
+test('a stale CSRF token does not break same-origin API calls and can be recovered', async () => {
+  const client = new SessionClient(baseUrl);
+  await client.get('/');
+
+  // Browsers add Sec-Fetch-Site themselves; pages on other sites cannot forge it.
+  const res = await fetch(baseUrl + '/api/cart/add', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: [...client.cookies].map(([k, v]) => `${k}=${v}`).join('; '),
+      Origin: baseUrl,
+      'Sec-Fetch-Site': 'same-origin',
+      'X-CSRF-Token': 'stale-token'
+    },
+    body: JSON.stringify({ id: 'gpu-4070s' })
+  });
+  assert.equal(res.status, 200, 'Same-origin request with a stale token must still succeed');
+
+  const crossSite = await fetch(baseUrl + '/api/cart/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Sec-Fetch-Site': 'cross-site', 'X-CSRF-Token': 'stale-token' },
+    body: JSON.stringify({ id: 'gpu-4070s' })
+  });
+  assert.equal(crossSite.status, 403, 'Cross-site requests still need a valid token');
+
+  const fresh = await client.get('/api/csrf');
+  const data = JSON.parse(fresh.body);
+  assert.equal(data.ok, true);
+  assert.ok(data.csrf.length > 10);
+  assert.equal(typeof data.counts.cart, 'number');
+});
+
+test('page views do not rewrite the session cookie, so slow responses cannot undo a cart change', async () => {
+  const client = new SessionClient(baseUrl);
+  await client.get('/');
+  const again = await fetch(baseUrl + '/catalog', {
+    headers: { Cookie: [...client.cookies].map(([k, v]) => `${k}=${v}`).join('; ') }
+  });
+  assert.equal(again.status, 200);
+  assert.equal(again.headers.getSetCookie().length, 0, 'An unchanged session must not send Set-Cookie');
+});
+
+test('static assets are cacheable, compressed and served with the new brand icons', async () => {
+  const css = await fetch(baseUrl + '/style.css?v=abc', { headers: { 'Accept-Encoding': 'br' } });
+  assert.equal(css.status, 200);
+  assert.match(css.headers.get('cache-control'), /immutable/);
+  assert.equal(css.headers.get('content-encoding'), 'br');
+
+  for (const file of ['/favicon.svg', '/favicon.ico', '/favicon-32x32.png', '/apple-touch-icon.png', '/icon-512.png', '/manifest.webmanifest', '/og-cover.jpg', '/fonts/manrope-latin.woff2', '/images/case-h7flow-400.webp']) {
+    const r = await fetch(baseUrl + file);
+    assert.equal(r.status, 200, `${file} should be served`);
+  }
+
+  const rules = await fetch(baseUrl + '/speculation.json');
+  assert.equal(rules.headers.get('content-type'), 'application/speculationrules+json');
+
+  const html = await fetch(baseUrl + '/');
+  assert.ok((html.headers.get('cache-control') || '').includes('private'));
+  assert.equal(html.headers.get('speculation-rules'), '"/speculation.json"');
+});
+
+test('success page for an order held by another serverless instance still confirms the order', async () => {
+  const client = new SessionClient(baseUrl);
+  await client.get('/');
+  const res = await client.get('/success?id=KPC-20260101-ABCDEF012345');
+  assert.equal(res.status, 200);
+  assert.ok(res.body.includes('KPC-20260101-ABCDEF012345'));
 });

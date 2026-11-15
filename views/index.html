@@ -1,60 +1,72 @@
-<section class="hero container">
-  <div class="hero-copy">
-    <p class="eyebrow"><span class="eyebrow-rule"></span>{{heroEyebrow}}</p>
-    <h1>{{{heroTitleHtml}}}</h1>
-    <p class="hero-lede">{{heroBody}}</p>
-    <div class="hero-actions">
-      <a href="/catalog?type=pc" class="button button-primary">{{heroPrimary}} {{{iconArrow}}}</a>
-      <a href="/builder" class="button button-quiet">{{heroSecondary}} {{{iconArrow}}}</a>
-    </div>
-    <div class="hero-proof">
-      <div class="proof-badge">{{{iconCheck}}}</div>
-      <span>{{heroFeature}}</span>
-      <span class="proof-divider"></span>
-      <span>{{warrantySummary}}</span>
-    </div>
-  </div>
-  <div class="hero-visual">
-    <div class="hero-visual-technical"><span>1440P ULTRA</span><span>AM5 · DDR5</span></div>
-    <a class="hero-product" href="{{heroHref}}" aria-label="{{heroBadge}} — {{heroBadgelabel}}">{{{heroImageHtml}}}</a>
-    <a class="hero-image-caption" href="{{heroHref}}">
-      <span class="hero-caption-dot"></span>
-      <div>
-        <strong>{{heroBadge}}</strong>
-        <small>{{heroBadgelabel}}</small>
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true"><span class="hero-orb orb-a"></span><span class="hero-orb orb-b"></span><span class="hero-grid"></span></div>
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow hero-eyebrow"><span class="eyebrow-rule"></span>{{heroEyebrow}}</p>
+      <h1 class="hero-title">{{{heroTitleHtml}}}</h1>
+      <p class="hero-lede">{{heroBody}}</p>
+      <div class="hero-actions">
+        <a href="/catalog?type=pc" class="button button-primary button-lg">{{heroPrimary}} {{{iconArrow}}}</a>
+        <a href="/builder" class="button button-ghost button-lg">{{heroSecondary}}</a>
       </div>
-      <span class="hero-caption-price">{{heroPriceFormatted}}</span>
-      {{{iconArrow}}}
-    </a>
+      <ul class="hero-proof">
+        <li>{{{iconShield}}}<span>{{warrantySummary}}</span></li>
+        <li>{{{iconTruck}}}<span>{{benefitDelivery}}</span></li>
+        <li>{{{iconCheck}}}<span>{{heroFeature}}</span></li>
+      </ul>
+    </div>
+    <div class="hero-visual" data-parallax>
+      <span class="hero-ring ring-1" aria-hidden="true"></span>
+      <span class="hero-ring ring-2" aria-hidden="true"></span>
+      <a class="hero-product" href="{{heroHref}}" aria-label="{{heroBadge}} — {{heroBadgelabel}}">{{{heroImageHtml}}}</a>
+      {{{heroChipsHtml}}}
+      <a class="hero-price-card" href="{{heroHref}}">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="hero-price-meta"><strong>{{heroBadge}}</strong><small>{{heroBadgelabel}}</small></span>
+        <b>{{heroPriceFormatted}}</b>
+      </a>
+    </div>
   </div>
 </section>
 
-<section class="benefits container" aria-label="KrakenPC {{storeLabel}}">
-  <article>
-    <span class="benefit-symbol">{{{iconCpu}}}</span>
-    <div>
+<section class="brand-strip" aria-label="{{brandsTitle}}">
+  <p class="brand-strip-title">{{brandsTitle}}</p>
+  <div class="marquee">
+    <div class="marquee-track">
+      <ul>{{{brandsHtml}}}</ul>
+      <ul aria-hidden="true">{{{brandsHtml}}}</ul>
+    </div>
+  </div>
+</section>
+
+<section class="section container trust" aria-label="KrakenPC {{storeLabel}}">
+  <div class="benefits" data-reveal-group>
+    <article class="benefit-card" data-reveal data-spotlight>
+      <span class="benefit-symbol">{{{iconCpu}}}</span>
       <h2>{{benefitBuild}}</h2>
       <p>{{benefitBuildText}}</p>
-    </div>
-  </article>
-  <article>
-    <span class="benefit-symbol">{{{iconShield}}}</span>
-    <div>
+    </article>
+    <article class="benefit-card" data-reveal data-spotlight>
+      <span class="benefit-symbol">{{{iconShield}}}</span>
       <h2>{{benefitWarranty}}</h2>
       <p>{{benefitWarrantyText}}</p>
-    </div>
-  </article>
-  <article>
-    <span class="benefit-symbol">{{{iconTruck}}}</span>
-    <div>
+    </article>
+    <article class="benefit-card" data-reveal data-spotlight>
+      <span class="benefit-symbol">{{{iconTruck}}}</span>
       <h2>{{benefitDelivery}}</h2>
       <p>{{benefitDeliveryText}}</p>
-    </div>
-  </article>
+    </article>
+  </div>
+  <dl class="stats" data-reveal>
+    <div class="stat"><dt>{{statWarranty}}</dt><dd><span data-count="12">12</span></dd></div>
+    <div class="stat"><dt>{{statProducts}}</dt><dd><span data-count="{{productCount}}">{{productCount}}</span></dd></div>
+    <div class="stat"><dt>{{statCategories}}</dt><dd><span data-count="{{categoryCount}}">{{categoryCount}}</span></dd></div>
+    <div class="stat"><dt>{{statFree}}</dt><dd><span data-count="1" data-suffix=" {{mln}}">1 {{mln}}</span></dd></div>
+  </dl>
 </section>
 
 <section class="section container">
-  <div class="section-heading">
+  <div class="section-heading" data-reveal>
     <div>
       <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionPicks}}</p>
       <h2>{{pcsLabel}}</h2>
@@ -65,8 +77,37 @@
   {{{buildsGridHtml}}}
 </section>
 
+<section class="section container">
+  <div class="build-banner" data-reveal>
+    <div class="build-banner-copy">
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionService}}</p>
+      <h2>{{serviceTitle}}</h2>
+      <p>{{serviceText}}</p>
+      <ul class="check-list">
+        <li>{{{iconCheck}}}<span>{{checkCompat}}</span></li>
+        <li>{{{iconCheck}}}<span>{{checkCables}}</span></li>
+        <li>{{{iconCheck}}}<span>{{checkTest}}</span></li>
+      </ul>
+      <a href="/builder" class="button button-primary button-lg">{{serviceButton}} {{{iconArrow}}}</a>
+    </div>
+    <div class="build-banner-visual">
+      <div class="build-showcase-frame">{{{serviceImageHtml}}}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section container category-shortcuts">
+  <div class="section-heading" data-reveal>
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{navCatalog}}</p>
+      <h2>{{allParts}}</h2>
+    </div>
+  </div>
+  <div class="category-row" data-reveal-group>{{{categoryLinksHtml}}}</div>
+</section>
+
 <section class="section container section-popular">
-  <div class="section-heading">
+  <div class="section-heading" data-reveal>
     <div>
       <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionPopular}}</p>
       <h2>{{partsLabel}}</h2>
@@ -77,29 +118,39 @@
   {{{popularGridHtml}}}
 </section>
 
-<section class="section container">
-  <div class="build-banner">
-    <div class="build-banner-visual">
-      <div class="build-showcase-frame">
-        {{{serviceImageHtml}}}
-      </div>
-    </div>
-    <div class="build-banner-copy">
-      <p class="eyebrow"><span class="eyebrow-rule"></span>{{sectionService}}</p>
-      <h2>{{serviceTitle}}</h2>
-      <p>{{serviceText}}</p>
-      <a href="/builder" class="button button-primary">{{serviceButton}} {{{iconArrow}}}</a>
-    </div>
-  </div>
-</section>
-
-<section class="section container category-shortcuts">
-  <div class="section-heading">
+<section class="section container process">
+  <div class="section-heading" data-reveal>
     <div>
-      <p class="eyebrow"><span class="eyebrow-rule"></span>{{navCatalog}}</p>
-      <h2>{{allParts}}</h2>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>{{processEyebrow}}</p>
+      <h2>{{processTitle}}</h2>
     </div>
   </div>
-  <div class="category-row">{{{categoryLinksHtml}}}</div>
+  <ol class="steps" data-reveal-group>
+    <li class="step" data-reveal><span class="step-num">01</span><span class="step-icon">{{{iconCursor}}}</span><h3>{{step1}}</h3><p>{{step1Text}}</p></li>
+    <li class="step" data-reveal><span class="step-num">02</span><span class="step-icon">{{{iconShield}}}</span><h3>{{step2}}</h3><p>{{step2Text}}</p></li>
+    <li class="step" data-reveal><span class="step-num">03</span><span class="step-icon">{{{iconWrench}}}</span><h3>{{step3}}</h3><p>{{step3Text}}</p></li>
+    <li class="step" data-reveal><span class="step-num">04</span><span class="step-icon">{{{iconTruck}}}</span><h3>{{step4}}</h3><p>{{step4Text}}</p></li>
+  </ol>
 </section>
 
+<section class="section container faq">
+  <div class="section-heading" data-reveal>
+    <div>
+      <p class="eyebrow"><span class="eyebrow-rule"></span>FAQ</p>
+      <h2>{{faqTitle}}</h2>
+    </div>
+  </div>
+  <div class="faq-list" data-reveal>{{{faqHtml}}}</div>
+</section>
+
+<section class="section container">
+  <div class="cta-banner" data-reveal>
+    <span class="cta-glow" aria-hidden="true"></span>
+    <h2>{{ctaTitle}}</h2>
+    <p>{{ctaText}}</p>
+    <div class="hero-actions">
+      <a href="/builder" class="button button-primary button-lg">{{serviceButton}} {{{iconArrow}}}</a>
+      <a href="/catalog?type=pc" class="button button-ghost button-lg">{{heroPrimary}}</a>
+    </div>
+  </div>
+</section>

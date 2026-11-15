@@ -331,14 +331,25 @@ function shrinkSession(session) {
   session.compare = session.compare.slice(0, MAX_COMPARE);
 }
 
+// A response only needs to carry Set-Cookie when the session really changed.
+// Re-sealing the cookie on every page view lets a slow, older response (for
+// example a prefetched page) overwrite a newer cart with stale data.
+function sessionFingerprint(session) {
+  return JSON.stringify([
+    session.sid, session.lang, session.theme, session.csrf,
+    session.cart, session.favorites, session.compare, !!session.isAdmin
+  ]);
+}
+
 function writeSessionCookie(req, res, session) {
   if (!session || session.ephemeral || res.headersSent) return;
+  if (req.sessionIsStored && req.sessionFingerprint === sessionFingerprint(session)) return;
   let value = sealSession(session);
   if (value.length > MAX_COOKIE_BYTES) {
     shrinkSession(session);
     value = sealSession(session);
   }
-  const secure = isRequestSecure(req) ? '; Secure' : '';
+  const secure = PROD || isRequestSecure(req) ? '; Secure' : '';
   res.setHeader('Set-Cookie', [
     `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}${secure}`,
     `${LEGACY_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`
@@ -349,12 +360,14 @@ async function getSession(req, res, { createIfMissing = true } = {}) {
   const jar = cookieMap(req);
   let session = openSession(jar[SESSION_COOKIE]);
 
+  req.sessionIsStored = Boolean(session);
   if (!session) {
     if (!createIfMissing) return Object.assign(freshSession(), { csrf: '', ephemeral: true });
     session = freshSession();
   }
 
   req.sessionId = session.sid;
+  req.sessionFingerprint = sessionFingerprint(session);
   return session;
 }
 
@@ -368,11 +381,20 @@ function flushSession(req, res) {
 }
 
 function validCsrf(req, session) {
-  if (!session?.csrf) return false;
-  const supplied = String(req.body?.csrf || req.headers['x-csrf-token'] || '');
-  const expected = String(session.csrf);
-  if (supplied.length !== expected.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+  if (session?.csrf) {
+    const supplied = String(req.body?.csrf || req.headers['x-csrf-token'] || '');
+    const expected = String(session.csrf);
+    if (supplied.length === expected.length &&
+        crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) {
+      return true;
+    }
+  }
+  // The token can legitimately go stale (cookie refreshed in another tab, a
+  // restored back/forward page, an in-app browser that dropped the cookie).
+  // Browsers attach Sec-Fetch-Site themselves and pages on other sites cannot
+  // forge it, so a same-origin request is as safe as one carrying the token.
+  // server.js has already verified that Origin matches this host.
+  return String(req.headers['sec-fetch-site'] || '') === 'same-origin';
 }
 
 function sessionCounts(session) {

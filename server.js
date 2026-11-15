@@ -7,7 +7,7 @@ const zlib = require('node:zlib');
 const u = m => (m && typeof m === 'object' && m.default && typeof m.default === 'object' ? m.default : m);
 const {
   ROOT, ON_VERCEL, PORT, HOST, PUBLIC_ORIGIN, PROD,
-  SESSION_KEY, STATUSES, BUILD_FIELDS, LEGACY_SLUG_REDIRECTS, LEGACY_PRODUCT_IDS,
+  SESSION_KEY, STATUSES, BUILD_FIELDS, LEGACY_SLUG_REDIRECTS,
   esc, localized, formatPrice, requestOrigin, localizedRoute, localPath
 } = u(require('./src/config'));
 const { tr } = u(require('./src/i18n'));
@@ -15,7 +15,7 @@ const {
   initStore, saveStore, getStore, productById, productBySlug,
   getSession, rotateSession, flushSession, validCsrf
 } = u(require('./src/storage'));
-const { productArtworkSvg, faviconPngBuffer, faviconIcoBuffer } = u(require('./src/artwork'));
+const { productArtworkSvg } = u(require('./src/artwork'));
 const { sendOrderReport, sendStatusReport, startBotPolling, stopBotPolling } = u(require('./src/telegram'));
 const { evaluateBuild } = u(require('./src/builder'));
 const { cartTotals, productImageUrl } = u(require('./src/views/layout'));
@@ -26,7 +26,18 @@ const {
 const { adminLoginPage, adminPage } = u(require('./src/views/adminPages'));
 
 const MAX_CART_LINES = 24;
+const LANGS = ['uz', 'ru', 'en'];
 const limiters = new Map();
+
+// Returns a same-site path whose ?lang= matches the visitor's chosen language.
+// Without this, a page opened as /catalog?lang=ru would put the old language
+// straight back after the visitor picked a different one.
+function withLang(back, lang) {
+  const destination = new URL(localPath(back), 'http://local');
+  if (lang === 'uz') destination.searchParams.delete('lang');
+  else destination.searchParams.set('lang', lang);
+  return destination.pathname + destination.search;
+}
 
 function rateAllowed(req, key, maximum, windowMs, scope = '') {
   const now = Date.now();
@@ -52,15 +63,35 @@ function rateAllowed(req, key, maximum, windowMs, scope = '') {
   return row.count <= maximum;
 }
 
+function pickEncoding(request) {
+  const accepted = String(request?.headers['accept-encoding'] || '');
+  if (/\bbr\b/.test(accepted)) return 'br';
+  if (/\bgzip\b/.test(accepted)) return 'gzip';
+  return '';
+}
+
+function compressDynamic(body, encoding) {
+  if (encoding === 'br') {
+    return zlib.brotliCompressSync(body, {
+      params: {
+        [zlib.constants.BROTLI_PARAM_QUALITY]: 4,
+        [zlib.constants.BROTLI_PARAM_SIZE_HINT]: body.length
+      }
+    });
+  }
+  return zlib.gzipSync(body, { level: 6 });
+}
+
 function outputBody(res, bytes) {
   let body = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
   const request = res.req;
   res.setHeader('Vary', 'Accept-Encoding');
-  if (body.length > 700 && /\bgzip\b/.test(String(request?.headers['accept-encoding'] || ''))) {
-    const compressed = zlib.gzipSync(body, { level: 6 });
+  const encoding = pickEncoding(request);
+  if (encoding && body.length > 700) {
+    const compressed = compressDynamic(body, encoding);
     if (compressed.length < body.length) {
       body = compressed;
-      res.setHeader('Content-Encoding', 'gzip');
+      res.setHeader('Content-Encoding', encoding);
     }
   }
   res.setHeader('Content-Length', body.length);
@@ -137,6 +168,94 @@ async function readBody(req) {
   throw Object.assign(new Error('Unsupported media type'), { statusCode: 415 });
 }
 
+const STATIC_FILES = new Map([
+  ['/style.css', ['text/css; charset=utf-8', 'asset', true]],
+  ['/app.js', ['application/javascript; charset=utf-8', 'asset', true]],
+  ['/favicon.svg', ['image/svg+xml; charset=utf-8', 'media', true]],
+  ['/mask-icon.svg', ['image/svg+xml; charset=utf-8', 'media', true]],
+  ['/favicon.ico', ['image/x-icon', 'media', false]],
+  ['/favicon.png', ['image/png', 'media', false]],
+  ['/favicon-16.png', ['image/png', 'media', false]],
+  ['/favicon-32x32.png', ['image/png', 'media', false]],
+  ['/favicon-48.png', ['image/png', 'media', false]],
+  ['/apple-touch-icon.png', ['image/png', 'media', false]],
+  ['/apple-touch-icon-precomposed.png', ['image/png', 'media', false, 'apple-touch-icon.png']],
+  ['/icon-192.png', ['image/png', 'media', false]],
+  ['/icon-512.png', ['image/png', 'media', false]],
+  ['/icon-maskable-512.png', ['image/png', 'media', false]],
+  ['/og-cover.jpg', ['image/jpeg', 'media', false]],
+  ['/manifest.webmanifest', ['application/manifest+json; charset=utf-8', 'media', true]]
+]);
+
+const STATIC_DIRS = [
+  { re: /^\/fonts\/([a-z0-9-]+\.woff2)$/, dir: 'fonts', type: () => 'font/woff2', policy: 'immutable', compress: false },
+  {
+    re: /^\/images\/([a-z0-9-]+\.(?:jpg|jpeg|webp|png))$/,
+    dir: 'images',
+    type: name => ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', png: 'image/png' })[name.split('.').pop()],
+    policy: 'immutable',
+    compress: false
+  }
+];
+
+const CACHE_POLICIES = {
+  immutable: 'public, max-age=31536000, s-maxage=31536000, immutable',
+  versioned: 'public, max-age=31536000, s-maxage=31536000, immutable',
+  asset: 'public, max-age=0, must-revalidate',
+  media: 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=86400'
+};
+
+const staticCache = new Map();
+
+async function loadStatic(file) {
+  const stat = await fs.stat(file);
+  const hit = staticCache.get(file);
+  if (hit && hit.mtime === stat.mtimeMs) return hit;
+  const raw = await fs.readFile(file);
+  const entry = {
+    mtime: stat.mtimeMs,
+    raw,
+    etag: `"${crypto.createHash('sha1').update(raw).digest('hex').slice(0, 24)}"`,
+    br: null,
+    gzip: null
+  };
+  staticCache.set(file, entry);
+  return entry;
+}
+
+async function sendStatic(req, res, file, mime, policy, compressible) {
+  let entry;
+  try {
+    entry = await loadStatic(file);
+  } catch {
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.end('Not found');
+  }
+  res.setHeader('Content-Type', mime);
+  res.setHeader('Cache-Control', CACHE_POLICIES[policy] || CACHE_POLICIES.media);
+  res.setHeader('ETag', entry.etag);
+  res.setHeader('Vary', 'Accept-Encoding');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  if (req.headers['if-none-match'] === entry.etag) {
+    res.statusCode = 304;
+    return res.end();
+  }
+  let body = entry.raw;
+  const encoding = compressible && body.length > 600 ? pickEncoding(req) : '';
+  if (encoding === 'br') {
+    entry.br ||= zlib.brotliCompressSync(entry.raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } });
+    body = entry.br;
+  } else if (encoding === 'gzip') {
+    entry.gzip ||= zlib.gzipSync(entry.raw, { level: 9 });
+    body = entry.gzip;
+  }
+  if (encoding) res.setHeader('Content-Encoding', encoding);
+  res.statusCode = 200;
+  res.setHeader('Content-Length', body.length);
+  res.end(req.method === 'HEAD' ? undefined : body);
+}
+
 function sendBytesAsset(res, bytes, contentType, maxAge = 300) {
   const etag = `"${crypto.createHash('sha1').update(bytes).digest('hex')}"`;
   res.setHeader('Content-Type', contentType);
@@ -150,14 +269,29 @@ function sendBytesAsset(res, bytes, contentType, maxAge = 300) {
   outputBody(res, bytes);
 }
 
-async function sendAsset(res, file, contentType, maxAge = 300) {
-  try {
-    const bytes = await fs.readFile(file);
-    sendBytesAsset(res, bytes, contentType, maxAge);
-  } catch {
-    res.statusCode = 404;
-    res.end('Not found');
+async function handlePublicFile(req, res, pathname, url) {
+  const exact = STATIC_FILES.get(pathname);
+  if (exact) {
+    const [mime, kind, compressible, alias] = exact;
+    const file = path.join(ROOT, 'public', alias || pathname.slice(1));
+    const policy = kind === 'asset' && url.searchParams.has('v') ? 'versioned' : kind;
+    await sendStatic(req, res, file, mime, policy, compressible);
+    return true;
   }
+  for (const rule of STATIC_DIRS) {
+    const match = pathname.match(rule.re);
+    if (!match) continue;
+    const base = path.join(ROOT, 'public', rule.dir);
+    const resolved = path.resolve(base, match[1]);
+    if (!resolved.startsWith(base + path.sep)) {
+      res.statusCode = 403;
+      res.end('Forbidden');
+      return true;
+    }
+    await sendStatic(req, res, resolved, rule.type(match[1]), rule.policy, rule.compress);
+    return true;
+  }
+  return false;
 }
 
 function sessionCounts(session) {
@@ -236,7 +370,7 @@ const LEGACY_HTML_REDIRECTS = {
   '/admin.html': '/admin'
 };
 
-function handleStaticGet(req, res, pathname, url) {
+async function handleStaticGet(req, res, pathname, url) {
   if (LEGACY_HTML_REDIRECTS[pathname]) {
     res.statusCode = 301;
     res.setHeader('Location', localPath(LEGACY_HTML_REDIRECTS[pathname] + url.search));
@@ -246,43 +380,26 @@ function handleStaticGet(req, res, pathname, url) {
   if (pathname === '/health') {
     return sendJson(res, { ok: true, store: 'KrakenPC' });
   }
-  if (pathname === '/style.css') {
-    return sendAsset(res, path.join(ROOT, 'public', 'style.css'), 'text/css; charset=utf-8', 600);
-  }
-  if (pathname === '/app.js') {
-    return sendAsset(res, path.join(ROOT, 'public', 'app.js'), 'application/javascript; charset=utf-8', 600);
-  }
-  if (pathname === '/favicon.svg') {
-    return sendAsset(res, path.join(ROOT, 'public', 'favicon.svg'), 'image/svg+xml; charset=utf-8', 604800);
-  }
-  if (pathname === '/favicon-32x32.png') {
-    return sendAsset(res, path.join(ROOT, 'public', 'favicon-32x32.png'), 'image/png', 604800);
-  }
-  if (pathname === '/apple-touch-icon.png' || pathname === '/apple-touch-icon-precomposed.png') {
-    return sendAsset(res, path.join(ROOT, 'public', 'apple-touch-icon.png'), 'image/png', 604800);
-  }
-  if (pathname === '/favicon.png') {
-    return sendBytesAsset(res, faviconPngBuffer(), 'image/png', 604800);
-  }
-  if (pathname === '/favicon.ico') {
-    return sendBytesAsset(res, faviconIcoBuffer(), 'image/x-icon', 604800);
-  }
+  if (await handlePublicFile(req, res, pathname, url)) return true;
 
-  const imgMatch = pathname.match(/^\/images\/([a-z0-9-]+)\.(jpg|jpeg|webp|png)$/);
-  if (imgMatch) {
-    const mime = {
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      webp: 'image/webp',
-      png: 'image/png'
-    }[imgMatch[2]];
-    const imagesDir = path.join(ROOT, 'public', 'images');
-    const resolved = path.resolve(imagesDir, `${imgMatch[1]}.${imgMatch[2]}`);
-    if (!resolved.startsWith(imagesDir + path.sep)) {
-      res.statusCode = 403;
-      return res.end('Forbidden');
-    }
-    return sendAsset(res, resolved, mime, 604800);
+  if (pathname === '/speculation.json') {
+    // Chromium reads this through the Speculation-Rules response header and
+    // prerenders likely next pages (moderate = on hover / pointer-down).
+    // State-changing GET routes are excluded on purpose.
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/speculationrules+json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return outputBody(res, Buffer.from(JSON.stringify({
+      prerender: [{
+        where: {
+          and: [
+            { href_matches: '/*' },
+            { not: { href_matches: ['/settings*', '/admin*', '/api/*', '/cart/*', '/checkout*', '/success*', '/favorites/*', '/compare/*', '/builder/add', '/health'] } }
+          ]
+        },
+        eagerness: 'moderate'
+      }]
+    })));
   }
 
   const artMatch = pathname.match(/^\/art\/([a-z0-9-]+)\.svg$/);
@@ -362,35 +479,7 @@ function handleStaticGet(req, res, pathname, url) {
   return false;
 }
 
-const COMMON_REDIRECTS = {
-  '/products': '/catalog',
-  '/pcs': '/catalog?type=pc',
-  '/parts': '/catalog?type=part',
-  '/home': '/',
-  '/shop': '/catalog',
-  '/favourite': '/favorites',
-  '/favorite': '/favorites',
-  '/wishlist': '/favorites',
-  '/comparison': '/compare',
-  '/pc-builder': '/builder',
-  '/build': '/builder',
-  '/order': '/cart',
-  '/orders': '/cart',
-  '/login': '/admin',
-  '/signin': '/admin'
-};
-
 async function handleGet(req, res, session, pathname, url) {
-  if (COMMON_REDIRECTS[pathname]) {
-    res.statusCode = 301;
-    res.setHeader('Location', localPath(COMMON_REDIRECTS[pathname] + url.search));
-    return res.end();
-  }
-
-  if (pathname === '/api/csrf') {
-    return sendJson(res, { ok: true, csrf: session.csrf });
-  }
-
   if (['/favorites', '/compare', '/cart', '/checkout', '/success', '/admin', '/admin/export.csv', '/admin/export.json'].includes(pathname)) {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
@@ -443,39 +532,26 @@ async function handleGet(req, res, session, pathname, url) {
   if (pathname === '/checkout') return checkoutPage(req, res, session);
   if (pathname === '/success') return successPage(req, res, session, url);
   if (pathname === '/admin') return adminPage(req, res, session, url);
+  if (pathname === '/api/csrf') {
+    // Lets the page recover its token (and counters) after a restored
+    // back/forward page or a cookie that was refreshed in another tab.
+    return sendJson(res, { ok: true, csrf: session.csrf, counts: sessionCounts(session) });
+  }
   if (pathname === '/settings') {
     const lang = url.searchParams.get('lang');
-    if (['uz', 'ru', 'en'].includes(lang)) session.lang = lang;
+    if (LANGS.includes(lang)) session.lang = lang;
     const theme = url.searchParams.get('theme');
     if (['light', 'dark'].includes(theme)) session.theme = theme;
-    const rawBack = url.searchParams.get('back') || '/';
-    const dest = new URL(localPath(rawBack), 'http://local');
-    if (dest.searchParams.has('lang')) {
-      if (session.lang === 'uz') dest.searchParams.delete('lang');
-      else dest.searchParams.set('lang', session.lang);
-      return redirect(res, dest.pathname + dest.search);
-    }
-    return redirect(res, localPath(rawBack));
+    return redirect(res, withLang(url.searchParams.get('back') || '/', session.lang));
   }
   if (pathname.startsWith('/product/')) {
-    const rawKey = pathname.slice('/product/'.length);
-    const slug = decodeURIComponent(rawKey);
+    const slug = pathname.slice('/product/'.length);
     if (LEGACY_SLUG_REDIRECTS[slug]) {
       res.statusCode = 301;
       res.setHeader('Location', `/product/${encodeURIComponent(LEGACY_SLUG_REDIRECTS[slug])}${url.search}`);
       return res.end();
     }
-    let product = productBySlug(slug);
-    if (!product) {
-      const resolvedId = LEGACY_PRODUCT_IDS[slug] || slug;
-      product = productById(resolvedId);
-      if (product) {
-        res.statusCode = 301;
-        res.setHeader('Location', `/product/${encodeURIComponent(product.slug)}${url.search}`);
-        return res.end();
-      }
-    }
-    return productPage(req, res, session, product);
+    return productPage(req, res, session, productBySlug(slug));
   }
   return pageNotFound(req, res, session);
 }
@@ -484,7 +560,7 @@ async function handleApiPost(req, res, session, pathname) {
   const form = req.body;
 
   if (pathname === '/api/settings') {
-    if (['uz', 'ru', 'en'].includes(form.lang)) session.lang = form.lang;
+    if (LANGS.includes(form.lang)) session.lang = form.lang;
     if (['light', 'dark'].includes(form.theme)) session.theme = form.theme;
     return sendJson(res, { ok: true, lang: session.lang, theme: session.theme });
   }
@@ -586,10 +662,7 @@ async function handlePost(req, res, session, pathname) {
   if (pathname === '/settings') {
     if (['uz', 'ru', 'en'].includes(form.lang)) session.lang = form.lang;
     if (['light', 'dark'].includes(form.theme)) session.theme = form.theme;
-    const destination = new URL(localPath(form.back), 'http://local');
-    if (session.lang === 'uz') destination.searchParams.delete('lang');
-    else destination.searchParams.set('lang', session.lang);
-    return redirect(res, destination.pathname + destination.search);
+    return redirect(res, withLang(form.back, session.lang));
   }
 
   if (pathname === '/cart/add') {
